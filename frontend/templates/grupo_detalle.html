@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Grupo {{ grupo.id_grupo }} - Mi Aplicación{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Detalle del Grupo {{ grupo.id_grupo }}</h1>
+    <p><strong>Nombre del Grupo:</strong> {{ grupo.nombre }}</p>
+    <p><strong>Descripción:</strong> {{ grupo.descripcion }}</p>
+    <!-- Añade más detalles del grupo aquí -->
+</div>
+{% endblock %}

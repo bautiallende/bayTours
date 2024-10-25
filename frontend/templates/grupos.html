@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Grupos - Mi Aplicación{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Botones en la parte superior -->
+    <div class="d-flex justify-content-end mb-3">
+        <!-- Botón de Filtro -->
+        <div class="dropdown mr-2">
+            <button class="btn btn-custom" type="button" id="filterButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-filter"></i> Filtro
+            </button>
+            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="filterButton">
+                <!-- Opciones de filtro -->
+                <a class="dropdown-item" href="#">Filtro 1</a>
+                <a class="dropdown-item" href="#">Filtro 2</a>
+                <a class="dropdown-item" href="#">Filtro 3</a>
+            </div>
+        </div>
+        <!-- Botón de Nueva Rooming List -->
+        <a href="/nueva_rooming_list" class="btn btn-custom mr-2">
+            <i class="fas fa-plus"></i> Nueva Rooming List
+        </a>
+        <!-- Botón de Exportar Datos -->
+        <button class="btn btn-custom" id="exportButton">
+            <i class="fas fa-file-export"></i> Exportar Datos
+        </button>
+    </div>
+
+    <!-- Tabla de Grupos -->
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="thead-custom">
+                <tr>
+                    <th>ID Grupo</th>
+                    <th>Compañía de Bus</th>
+                    <th>Nombre del Guía</th>
+                    <th>Operaciones</th>
+                    <th>Estado</th>
+                    <th>Fecha de Inicio</th>
+                    <th>Fecha de Fin</th>
+                    <th>Asistente</th>
+                    <th>PAX</th>
+                    <th>QR</th>
+                    <th>Ciudad Actual</th>
+                    <th>Hotel Actual</th>
+                    <!-- Añade más columnas si es necesario -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for grupo in grupos %}
+                <tr data-href="/grupo/{{ grupo.id_group }}">
+                    <td>{{ grupo.id_group }}</td>
+                    <td>{{ grupo.bus_company }}</td>
+                    <td>{{ grupo.guide_name }}</td>
+                    <td>{{ grupo.operaciones_name }}</td>
+                    <td>{{ grupo.status }}</td>
+                    <td>{{ grupo.start_date }}</td>
+                    <td>{{ grupo.end_date }}</td>
+                    <td>{{ grupo.nombre_asistente }}</td>
+                    <td>{{ grupo.PAX }}</td>
+                    <td>{{ grupo.QR }}</td>
+                    <td>{{ grupo.ciudad_actual }}</td>
+                    <td>{{ grupo.hotel_actual }}</td>
+                    <!-- Añade más celdas si es necesario -->
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="12">No se encontraron grupos.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Script para hacer las filas clicables -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var rows = document.querySelectorAll("tr[data-href]");
+        rows.forEach(function(row) {
+            row.addEventListener("click", function() {
+                window.location.href = this.dataset.href;
+            });
+        });
+    });
+
+    // Función para el botón de Exportar Datos
+    document.getElementById('exportButton').addEventListener('click', function() {
+        alert('Funcionalidad de exportación en desarrollo...');
+        // Aquí puedes implementar la lógica para exportar los datos
+    });
+</script>
+
+{% endblock %}
