@@ -90,8 +90,10 @@
 .main-content {
     margin-left: 60px; /* Margen izquierdo cuando el menú está contraído */
     padding: 20px; /* Espaciado interno del contenido */
+    padding-top: 5px;
     transition: margin-left 0.2s ease; /* Transición suave al cambiar el margen */
 }
+
 
 /* Ajustamos el margen del contenido principal cuando el menú está expandido */
 .sidebar:hover ~ .main-content {
@@ -148,3 +150,42 @@
     vertical-align: middle; /* Centrar verticalmente el contenido */
     text-align: center; /* Centrar horizontalmente el contenido */
 }
+
+.table td, .table th a{
+    color: black; /* Color del texto */
+    text-decoration: none; /* Sin subrayado */
+}
+
+.table thead th a:hover {
+    color: #214177; /* Color al pasar el cursor, opcional */
+    text-decoration: underline; /* Subrayado al pasar el cursor, opcional */
+}
+
+/* Estilos para el encabezado del modal */
+.modal-header {
+    background-color: #214177;
+    color: white;
+}
+
+/* Estilos para los botones del modal */
+.modal-footer .btn-custom {
+    background-color: #214177;
+    color: white;
+    border: none;
+}
+
+.modal-footer .btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* Estilos para los campos del modal */
+.modal-body .form-group {
+    margin-bottom: 15px;
+  }
+  
+  /* Estilos para el switch */
+  .custom-control-label::after, .custom-control-label::before {
+    top: 0.25rem;
+    left: -2rem;
+  }
