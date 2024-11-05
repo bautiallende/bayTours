@@ -12,7 +12,7 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 REDIRECT_URI = 'http://localhost:8001/oauth2callback'
 
-CREDENTIALS = "../credentials.json"
+CREDENTIALS = ".../credentials.json"
 
 
 def get_credentials(session):
