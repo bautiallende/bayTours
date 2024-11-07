@@ -222,13 +222,27 @@ async def grupo_detalle(request: Request, id_group: str, table: str = "clientes"
         print(f"Error al obtener los datos del grupo: {e}")
         group_data = []
     print(f'group data obtenido del endpoint: {group_data}')
-    # Pasar los datos al template
+    
+    table_data = group_data[1] if len(group_data) > 1 else []
+
+    print(f'\ntable data: {table_data}\n')
+    
     return templates.TemplateResponse("grupo_detalle.html", {
         "request": request,
         "group_data": group_data[0] if group_data else {},
+        "table_data": table_data,
         "id_group": id_group,
-        "table": table
-    })
+        "current_table": table
+        })
+    
+    
+    
+    # return templates.TemplateResponse("grupo_detalle.html", {
+    #     "request": request,
+    #     "group_data": group_data[0] if group_data else {},
+    #     "id_group": id_group,
+    #     "table": table
+    # })
 
 
 

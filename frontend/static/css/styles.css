@@ -137,7 +137,7 @@
 }
 
 .thead-custom th {
-    border-bottom: 2px solid #dee2e6; /* Línea divisoria entre el encabezado y los datos */
+    border-bottom: 1px solid #dee2e6; /* Línea divisoria entre el encabezado y los datos */
 }
 
 /* Opcional: Estilo para las filas al pasar el cursor */

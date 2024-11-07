@@ -38,5 +38,6 @@ async def groups_filter_options(db: Session = Depends(get_db)):
 
 @router.get('/group_data')
 async def group_data(id_group:str , table:str, db: Session = Depends(get_db)):
+    print(f'Entrada por el endpoint group_data con los parametros: id_group {id_group}, y table: {table} ')
     group_data = await group_service.get_group_data(db=db, id_group=id_group, table=table)
     return group_data
