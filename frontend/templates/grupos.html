@@ -22,9 +22,9 @@
     <!-- Botones en la parte superior -->
     <div class="d-flex justify-content-end mb-3">
         <!-- Botón de Filtro -->
-        <div class="dropdown mr-2">
-            <button class="btn btn-custom mr-2" type="button" data-toggle="modal" data-target="#filterModal">
-                <i class="fas fa-filter"></i> Filtro
+        <div class="dropdown me-2">
+            <button class="btn btn-custom me-2" type="button" data-bs-toggle="modal" data-bs-target="#filterModal">
+              <i class="fas fa-filter"></i> Filtro
             </button>
             <div class="dropdown-menu dropdown-menu-right" aria-labelledby="filterButton">
                 <!-- Opciones de filtro -->
@@ -34,7 +34,7 @@
             </div>
         </div>
         <!-- Botón de Nueva Rooming List -->
-        <a href="/nueva_rooming_list" class="btn btn-custom mr-2">
+        <a href="/nueva_rooming_list" class="btn btn-custom me-2">
             <i class="fas fa-plus"></i> Nueva Rooming List
         </a>
         <!-- Botón de Exportar Datos -->
@@ -200,82 +200,14 @@
     </div>
 </div>
 
-<!-- Script para hacer las filas clicables -->
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        var rows = document.querySelectorAll("tr[data-href]");
-        rows.forEach(function(row) {
-            row.addEventListener("click", function() {
-                window.location.href = this.dataset.href;
-            });
-        });
-    });
-
-    function exportarDatos() {
-        // Obtener los parámetros actuales de la URL (filtros y ordenamiento)
-        const params = new URLSearchParams(window.location.search);
-        
-        // Convertir los parámetros a un objeto
-        const paramsObj = {};
-        params.forEach((value, key) => {
-            paramsObj[key] = value;
-        });
-
-        // Abrir una nueva ventana o pestaña en blanco
-        const newWindow = window.open('', '_blank');
-
-        // Realizar una solicitud POST al servidor
-        fetch('/exportar_datos', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(paramsObj)
-        })
-        .then(response => {
-            if (response.status === 401) {
-                // Se requiere autenticación
-                return response.json().then(data => {
-                    if (data.auth_url) {
-                        newWindow.location.href = data.auth_url;
-                    } else {
-                        alert('Se requiere autenticación. Por favor, inténtalo de nuevo.');
-                        newWindow.close();
-                    }
-                });
-            } else if (!response.ok) {
-                throw new Error('Error en la respuesta del servidor');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.sheet_url) {
-                // Redirigir la nueva ventana a la URL de la hoja de cálculo
-                newWindow.location.href = data.sheet_url;
-            } else if (data.error) {
-                // Manejar errores si es necesario
-                alert(data.error);
-                newWindow.close();
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Ocurrió un error al exportar los datos.');
-            newWindow.close();
-        });
-    }
-
-</script>
 <!-- Modal de Filtros -->
-<div class="modal fade" id="filterModal" tabindex="-1" role="dialog" aria-labelledby="filterModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
+<div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <form id="filterForm" method="get" action="/grupos">
         <div class="modal-header">
           <h5 class="modal-title" id="filterModalLabel">Filtros</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
-            <span aria-hidden="true">&times;</span>
-          </button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
         <div class="modal-body">
           <!-- Campos de Filtro en formato horizontal -->
@@ -383,16 +315,14 @@
             </div>
           </div>
           <div class="modal-footer">
-            <!--<button type="button" class="btn btn-secondary" onclick="clearFilters()">Limpiar Filtros</button>-->
             <a href="/grupos" class="btn btn-secondary">Limpiar Filtros</a>
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             <button type="submit" class="btn btn-custom">Aplicar Filtros</button>
-            
           </div>
         </form>
       </div>
     </div>
   </div>
-
+  <script src="{{ url_for('static', path='js/grupos.js') }}" defer></script>
 
 {% endblock %}

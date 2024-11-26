@@ -59,7 +59,8 @@ class ClientsHandler(BaseHandler):
                     "sex": row['SEXO'],
                     "nationality": row['NACIONALIDAD'],
                     "passport": row['PASAPORTE'],
-                    "vtc_passport": datetime.strptime(row['VENCIMIENTO DE PASAPORTE'], '%d-%m-%Y') if row['VENCIMIENTO DE PASAPORTE'] else None,
+                    "vtc_passport": (datetime.strptime(row['VENCIMIENTO DE PASAPORTE'], '%d-%m-%Y')
+                                        if isinstance(row['VENCIMIENTO DE PASAPORTE'], str) else row['VENCIMIENTO DE PASAPORTE']),
                     "phone": row.get('TELEFONO', None),  # Agregar columnas adicionales según sea necesario
                     "mail": row.get('EMAIL', None)       # Si no existen, se asigna None
                 })

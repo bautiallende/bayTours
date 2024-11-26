@@ -5,7 +5,7 @@ from datetime import datetime
 class GroupBase(BaseModel):
     id_guide: Optional[int] = None
     id_transport: Optional[int] = None
-    assistant_id: Optional[int] = None
+    id_assistant: Optional[int] = None
     assistant_id_2: Optional[int] = None
     id_operations: Optional[int] = None
     id_responsible: Optional[str] = None

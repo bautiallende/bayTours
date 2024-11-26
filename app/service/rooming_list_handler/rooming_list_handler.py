@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.service import clients
 from app.service import group
 from datetime import datetime
+from dateutil.parser import parse
 
 
 
@@ -91,18 +92,24 @@ class RoomingListHandler(BaseHandler):
 
 
     async def calculate_datetime(self, date_str: str) -> datetime:
-        # Parsear la fecha y hora sin el año
-        date = datetime.strptime(date_str, "%d-%m %H:%M")
+        try:
+            # Verificar si la cadena contiene año basándonos en la longitud
+            if len(date_str.split('-')) == 2:  # Solo contiene día y mes
+                date = datetime.strptime(date_str, "%d-%m")
+                now = datetime.now()
+                date = date.replace(year=now.year)
+            else:
+                # Para fechas que ya incluyen el año y posiblemente la hora, usamos parse
+                date = parse(date_str, dayfirst=True)
 
-        # Asignar el año correcto
-        now = datetime.now()
-        date = date.replace(year=now.year)
-        
-        # Si la fecha ya pasó este año, se asume que es para el siguiente año
-        if date < now:
-            date = date.replace(year=now.year + 1)
-        
-        return date
+            # Si la fecha ya pasó este año, ajustar al próximo año
+            now = datetime.now()
+            # if date < now:
+            #     date = date.replace(year=now.year + 1)
+
+            return date
+        except ValueError as e:
+            raise ValueError(f"Error al procesar la fecha: {e}")
 
 
 

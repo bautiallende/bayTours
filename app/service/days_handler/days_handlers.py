@@ -95,4 +95,5 @@ class DaysHandler(BaseHandler):
                 stage_index += 1
 
         # Guardar todos los cambios en la base de datos
+        return
        

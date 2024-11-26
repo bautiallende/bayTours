@@ -4,6 +4,11 @@
 {% block title %}Detalle del Grupo - Mi Aplicación{% endblock %}
 
 {% block content %}
+<script>
+    const idGroup = "{{ id_group }}";
+    const startingDate = {{ starting_date|default('')|tojson }};
+    const endingDate = {{ ending_date|default('')|tojson }};
+</script>
 <div class="container-fluid">
     <!-- Título del grupo -->
     <div class="row mt-1">
@@ -24,12 +29,16 @@
                         <div class="col-8">
                             <p><strong>ID Grupo:</strong> {{ group_data.id_group }}</p>
                             <p>
-                                <strong>Guía:</strong> {{ group_data.guide_name or 'No asignado' }}
-                                <a href="#" class="ml-2 edit-icon"><i class="fas fa-edit"></i></a>
+                                <strong>Guía:</strong> <span id="guideName">{{ group_data.guide_name or 'No asignado' }}</span>
+                                <a href="#" class="ms-2 edit-icon" data-bs-toggle="modal" data-bs-target="#editGuideModal">
+                                    <i class="fas fa-edit"></i>
+                                </a>
                             </p>
                             <p>
-                                <strong>Bus:</strong> {{ group_data.bus_company or 'No asignado' }}
-                                <a href="#" class="ml-2 edit-icon"><i class="fas fa-edit"></i></a>
+                                <strong>Bus:</strong> <span id="busInfo">{{ group_data.bus_company or 'No asignado' }}{{ ' - ' + group_data.bus_code if group_data.bus_code else '' }}</span>
+                                <a href="#" class="ms-2 edit-icon" data-bs-toggle="modal" data-bs-target="#editBusModal">
+                                    <i class="fas fa-edit"></i>
+                                </a>
                             </p>
                         </div>
                         <!-- Columna derecha (más estrecha) -->
@@ -37,9 +46,67 @@
                             <!-- Estado posicionado más arriba -->
                             <div class="align-self-start mt-2">
                                 <span class="badge badge-pill badge-success" style="font-size: 1.2rem; padding: 10px;">{{ group_data.status | capitalize }}</span>
+                                <p>
+                                    <strong>QR:</strong> {{ 'Sí' if group_data.QR else 'No' }}
+                                    <a href="#" class="ms-2 edit-icon"><i class="fas fa-edit"></i></a>
+                                </p>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+        <!-- Modal para Editar Guía -->
+        <div class="modal fade" id="editGuideModal" tabindex="-1" aria-labelledby="editGuideModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="editGuideForm">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editGuideModalLabel">Editar Guía</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="guideSelect" class="form-label">Seleccione el nuevo guía</label>
+                                <select class="form-select" id="guideSelect">
+                                    <!-- Las opciones se generarán dinámicamente con JavaScript -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- Modal para Editar Bus -->
+        <div class="modal fade" id="editBusModal" tabindex="-1" aria-labelledby="editBusModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="editBusForm">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editBusModalLabel">Editar Información del Bus</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="busCompanySelect" class="form-label">Seleccione la Compañía de Bus</label>
+                                <select class="form-select" id="busCompanySelect" required>
+                                    <!-- Las opciones se generarán dinámicamente con JavaScript -->
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="busCodeInput" class="form-label">Código del Bus</label>
+                                <input type="text" class="form-control" id="busCodeInput" value="" placeholder="Ingrese el código del bus" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -69,35 +136,114 @@
         <div class="col-md-4">
             <div class="card" style="background-color: #BDD8F1; border-radius: 10px;">
                 <div class="card-body p-2">
-                    <h5>Contacto</h5>
                     <div class="row">
-                        <!-- Subdivisión lateral -->
+                        <!-- Columna izquierda -->
                         <div class="col-6">
+                            <h5>Contacto</h5>
                             <p>
-                                <strong>Operador:</strong> {{ group_data.operaciones_name or 'No asignado' }}
-                                <a href="#" class="ml-2 edit-icon"><i class="fas fa-edit"></i></a>
+                                <strong>Operaciones:</strong> <span id="operationsAgentInfo">{{ group_data.operaciones_name or 'No asignado' }}</span>
+                                <a href="#" class="ms-2 edit-icon" data-bs-toggle="modal" data-bs-target="#editOperationsAgentModal">
+                                    <i class="fas fa-edit"></i>
+                                </a>
                             </p>
                             <p>
-                                <strong>Asistente:</strong> {{ group_data.nombre_asistente or 'No asignado' }}
-                                <a href="#" class="ml-2 edit-icon"><i class="fas fa-edit"></i></a>
+                                <strong>Asistente:</strong> <span id="assistantInfo">{{ group_data.nombre_asistente or 'No asignado' }}</span>
+                                <a href="#" class="ms-2 edit-icon" data-bs-toggle="modal" data-bs-target="#editAssistantModal">
+                                    <i class="fas fa-edit"></i>
+                                </a>
                             </p>
                             <p>
-                                <strong>Hoteles:</strong> {{ group_data.id_responsible_hotels or 'No asignado' }}
-                                <a href="#" class="ml-2 edit-icon"><i class="fas fa-edit"></i></a>
+                                <strong>Responsable de Hoteles:</strong> <span id="responsibleHotelsInfo"> {{ group_data.id_responsible_hotels or 'No asignado' }}</span>
+                                <a href="#" class="ms-2 edit-icon" data-bs-toggle="modal" data-bs-target="#editResponsibleHotelsModal">
+                                    <i class="fas fa-edit"></i>
+                                </a>
                             </p>
-                            <p>
-                                <strong>QR enviado:</strong> {{ 'Sí' if group_data.QR else 'No' }}
-                                <a href="#" class="ml-2 edit-icon"><i class="fas fa-edit"></i></a>
-                            </p>
+                            
                         </div>
-                        <div class="col-6 d-flex align-items-center justify-content-center">
+                        <!-- Columna derecha (Mapa) -->
+                        <div class="col-6 d-flex align-items-start justify-content-center">
                             <!-- Mini mapa -->
-                            <a href="#" data-toggle="modal" data-target="#mapModal">
-                                <img src="{{ url_for('static', path='images/mini_mapa.png') }}" alt="Mapa" class="img-fluid" style="border-radius: 0px;">
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#mapModal">
+                                <img src="{{ url_for('static', path='images/mini_mapa.png') }}" alt="Mapa" class="img-fluid mini-map-img" style="border-radius: 0px; max-width:90%">
                             </a>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal para Editar Agente de Operaciones -->
+    <div class="modal fade" id="editOperationsAgentModal" tabindex="-1" aria-labelledby="editOperationsAgentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="editOperationsAgentForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editOperationsAgentModalLabel">Editar Agente de Operaciones</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="operationsAgentSelect" class="form-label">Seleccione el nuevo agente de operaciones</label>
+                            <select class="form-select" id="operationsAgentSelect" required>
+                                <!-- Las opciones se generarán dinámicamente con JavaScript -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Modal para Editar Asistente -->
+    <div class="modal fade" id="editAssistantModal" tabindex="-1" aria-labelledby="editAssistantModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="editAssistantForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editAssistantModalLabel">Editar Asistente</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="assistantSelect" class="form-label">Seleccione el nuevo asistente</label>
+                            <select class="form-select" id="assistantSelect" required>
+                                <!-- Las opciones se generarán dinámicamente con JavaScript -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Modal para Editar Responsable de Hoteles -->
+    <div class="modal fade" id="editResponsibleHotelsModal" tabindex="-1" aria-labelledby="editResponsibleHotelsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="editResponsibleHotelsForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editResponsibleHotelsModalLabel">Editar Responsable de Hoteles</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="responsibleHotelsSelect" class="form-label">Seleccione el nuevo responsable de hoteles</label>
+                            <select class="form-select" id="responsibleHotelsSelect" required>
+                                <!-- Las opciones se generarán dinámicamente con JavaScript -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -109,9 +255,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h4 class="modal-title" id="mapModalLabel">Ubicación del Grupo</h4>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
-              <span aria-hidden="true">&times;</span>
-            </button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
           </div>
           <div class="modal-body">
             <!-- Mapa ampliado -->
@@ -144,7 +288,6 @@
     </li>
 </ul>
 
-<!-- Contenido de las pestañas -->
 <!-- Contenido de las pestañas -->
 <div class="mt-3">
     {% if current_table == 'clientes' %}
@@ -187,7 +330,7 @@
         <!-- Aquí iría el código para mostrar la tabla de cuartos con datos reales -->
         <!-- Ejemplo de tabla vacía -->
         <p>Contenido de cuartos no implementado aún.</p>
-        {% elif current_table == 'opcionales' %}
+    {% elif current_table == 'opcionales' %}
         <!-- Contenido de Opcionales -->
         <h3 class="mt-3">Lista de Opcionales</h3>
         {% if table_data %}
@@ -208,15 +351,33 @@
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <!-- Encabezados -->
-                        <thead style="background-color: #BDD8F1;">
+                        <thead class="thead-custom">
                             <tr>
-                                <th>Nombre Completo</th>
-                                <th>Fecha de Nacimiento</th>
-                                <th>Sexo</th>
-                                {% for city in ns.cities %}
-                                    <th>{{ city }}</th>
+                                <th class="thead-custom" style="background-color: #BDD8F1 !important;">Nombre Completo</th>
+                                <th class="thead-custom" style="background-color: #BDD8F1 !important;">Edad</th>
+                                <th class="thead-custom" style="background-color: #BDD8F1 !important;">Sexo</th>
+                                {% for city_info in itinerary %}
+                                    {% set city = city_info.city %}
+                                    {% if city_info.start_date_obj and city_info.end_date_obj %}
+                                        {% if city_info.start_date_obj <= current_date <= city_info.end_date_obj %}
+                                            {% set current_city_class = 'current-city' %}
+                                        {% elif city_info.end_date_obj < current_date %}
+                                            {% set current_city_class = 'past-city' %}
+                                        {% else %}
+                                            {% set current_city_class = '' %}
+                                        {% endif %}
+                                    {% else %}
+                                        {% set current_city_class = '' %}
+                                    {% endif %}
+                                    <th class="{{ current_city_class }}" style="background-color: #BDD8F1 !important;">
+                                        {{ city }}<br>
+                                        <small style="font-weight: lighter;">
+                                            {{ city_info.start_date }}<br>
+                                            {{ city_info.end_date }}
+                                        </small>
+                                    </th>
                                 {% endfor %}
-                                <th>Total Opcionales</th>
+                                <th class="thead-custom" style="background-color: #BDD8F1 !important;">Total Opcionales</th>
                             </tr>
                         </thead>
                         <!-- Cuerpo -->
@@ -224,59 +385,59 @@
                             {% for client in table_data %}
                             {% set client_index = loop.index0 %}
                             {% set client_ns = namespace(total_cliente=0) %}
-                            <tr data-toggle="collapse" data-target=".details-{{ client_index }}" aria-expanded="false" class="clickable">
+                            <tr data-bs-toggle="collapse" data-bs-target="#details-{{ client_index }}" aria-expanded="false" class="clickable">
                                 <!-- Nombre Completo -->
                                 <td>
                                     {{ client.first_name }} {{ client.second_name or '' }} {{ client.paternal_surname }} {{ client.mother_surname }}
                                     <!-- Icono para indicar que es expandible -->
                                     <span class="collapse-icon"><i class="fas fa-chevron-down"></i></span>
                                 </td>
-                                <!-- Fecha de Nacimiento -->
-                                <td>{{ client.birth_date or 'N/A' }}</td>
+                                <!-- Edad -->
+                                <td>
+                                    {{ client.age}}
+                                </td>
                                 <!-- Sexo -->
                                 <td>{{ client.sex }}</td>
                                 <!-- Opcionales por ciudad -->
-                                {% for city in ns.cities %}
-                                    <td>
+                                {% for city_info in itinerary %}
+                                    {% set city = city_info.city %}
+                                    {% if city_info.start_date_obj and city_info.end_date_obj %}
+                                        {% if city_info.start_date_obj <= current_date < city_info.end_date_obj %}
+                                            {% set current_city_class = 'current-city' %}
+                                        {% elif city_info.end_date_obj <= current_date %}
+                                            {% set current_city_class = 'past-city' %}
+                                        {% else %}
+                                            {% set current_city_class = '' %}
+                                        {% endif %}
+                                    {% else %}
+                                        {% set current_city_class = '' %}
+                                    {% endif %}
+                                    <td class="{{ current_city_class }}">
                                         {% if client.city_optionals and city in client.city_optionals %}
                                             {% set optionals_list = client.city_optionals[city] %}
-                                            {% if optionals_list %}
-                                                <div class="contracted-content">
-                                                    {% for optional in optionals_list %}
-                                                        <p class="activity-name"><strong>{{ optional.optional_name }}</strong></p>
-                                                        {% if optional.total %}
-                                                            {% set client_ns.total_cliente = client_ns.total_cliente + optional.total %}
-                                                        {% endif %}
-                                                    {% endfor %}
-                                                </div>
-                                                <div class="collapse details-{{ client_index }}">
-                                                    {% for optional in optionals_list %}
-                                                        <p><strong>{{ optional.optional_name }}</strong></p>
-                                                        <p>Precio: {{ optional.price }}</p>
-                                                        <p>Descuento: {{ optional.discount or 0 }}</p>
-                                                        <p>Total: {{ optional.total }}</p>
-                                                        <!-- Botón para editar -->
-                                                        <a href="#" class="btn btn-sm btn-primary edit-optional" data-client-id="{{ client_index }}" data-city="{{ city }}">Editar</a>
-                                                        <hr>
-                                                    {% endfor %}
-                                                </div>
-                                            {% else %}
-                                                <!-- Sin opcionales -->
-                                                <div class="contracted-content">
-                                                    <p>Sin opcionales</p>
-                                                </div>
-                                                <div class="collapse details-{{ client_index }}">
-                                                    <!-- Botón para agregar -->
-                                                    <a href="#" class="btn btn-sm btn-success add-optional" data-client-id="{{ client_index }}" data-city="{{ city }}">Agregar</a>
-                                                </div>
-                                            {% endif %}
+                                            <div class="contracted-content">
+                                                {% for optional in optionals_list %}
+                                                    <p class="activity-name"><strong>{{ optional.optional_name }}</strong></p>
+                                                    {% if optional.total %}
+                                                        {% set client_ns.total_cliente = client_ns.total_cliente + optional.total %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                            <div class="collapse" id="details-{{ client_index }}">
+                                                {% for optional in optionals_list %}
+                                                    <p><strong>{{ optional.optional_name }}</strong></p>
+                                                    <p>Precio: {{ optional.price }}</p>
+                                                    <p>Descuento: {{ optional.discount or 0 }}</p>
+                                                    <p>Total: {{ optional.total }}</p>
+                                                    <a href="#" class="btn btn-sm btn-primary edit-optional" data-client-id="{{ client_index }}" data-city="{{ city }}">Editar</a>
+                                                    <hr>
+                                                {% endfor %}
+                                            </div>
                                         {% else %}
-                                            <!-- Sin opcionales -->
                                             <div class="contracted-content">
                                                 <p>Sin opcionales</p>
                                             </div>
-                                            <div class="collapse details-{{ client_index }}">
-                                                <!-- Botón para agregar -->
+                                            <div class="collapse" id="details-{{ client_index }}">
                                                 <a href="#" class="btn btn-sm btn-success add-optional" data-client-id="{{ client_index }}" data-city="{{ city }}">Agregar</a>
                                             </div>
                                         {% endif %}
@@ -307,171 +468,15 @@
         <p>Seleccione una pestaña para ver el contenido.</p>
     {% endif %}
 </div>
+<script src="{{ url_for('static', path='js/grupo_detalle.js') }}" defer></script>
 
-<!-- Estilos -->
-<style>
-    .edit-icon {
-        display: none;
-        color: #007bff;
-    }
-    p:hover .edit-icon {
-        display: inline;
-    }
-    /* Ajustar márgenes y padding */
-    h3 {
-        margin-top: 3px;
-        margin-bottom: 3px;
-    }
-    .mb-1 {
-    margin-bottom: .1px !important;
-    margin-top: .1px !important;
-    }
-    /* Centrar el estado "Activo" */
-    .badge {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    /* Hacer que las tarjetas tengan la misma altura */
-    .card {
-        height: 100%;
-    }
-
-    /* Estilos para hacer el encabezado de la tabla fijo */
-    .table-responsive {
-        max-height: 750px; /* Ajusta esta altura según tus necesidades */
-        overflow-y: auto;
-    }
-
-    .table thead th {
-        position: sticky;
-        top: 0;
-        background-color: #BDD8F1; /* Asegúrate de que coincida con el color de fondo del encabezado */
-        z-index: 2; /* Asegura que el encabezado esté por encima del contenido */
-    }
-
-    /* Opcional: estilo para las sombras */
-    .table thead th::after {
-        content: '';
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: -1px;
-        height: 1px;
-        background-color: #ddd;
-    }
-
-    /* Hacer que el cursor sea de puntero en filas clicables */
-    .clickable {
-        cursor: pointer;
-    }
-    .clickable:hover {
-        background-color: #f5f5f5;
-    }
-    .collapse-icon {
-        float: right;
-        font-size: 0.9em;
-        margin-top: 4px;
-    }
-    /* Estilos para separar los nombres de las actividades */
-    .activity-name {
-        margin: 0;
-        padding: 0;
-    }
-    .activity-name:not(:last-child) {
-        border-bottom: 1px solid #ddd;
-        margin-bottom: 5px;
-    }
-    /* Estilos para el contenido oculto */
-    .collapse {
-        background-color: #f9f9f9;
-    }
-    /* Ajustar el padding en las celdas */
-    td {
-        vertical-align: top;
-        padding: 8px;
-    }
-
-    /* Ocultar el contenido contraído cuando la fila está expandida */
-    tr[aria-expanded="true"] .contracted-content {
-        display: none;
-    }
-
-    /* Rotar el icono al expandir */
-    tr.clickable .collapse-icon i {
-        transition: transform 0.2s;
-    }
-
-    tr[aria-expanded="true"] .collapse-icon i {
-        transform: rotate(180deg);
-    }
-</style>
 
 <!-- Scripts para el mapa y modal (permanece igual) -->
-<!-- <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script> -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" crossorigin=""></script>
-<!-- CSS de Bootstrap -->
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-<!-- CSS de Font Awesome (para los íconos) -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
 
 
 
-
-<script>
-    // Inicializar el mapa cuando el modal se muestra
-    var map; // Declaramos la variable map fuera de las funciones
-
-    $(document).ready(function() {
-        // Inicializar el mapa cuando el modal se muestra
-        $('#mapModal').on('shown.bs.modal', function () {
-            if (!map) {
-                // Solo inicializamos el mapa si no existe
-                map = L.map('mapContainer').setView([51.505, -0.09], 13); // Coordenadas de ejemplo
-
-                // Añadir capa de mapa (OpenStreetMap)
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; OpenStreetMap contributors'
-                }).addTo(map);
-
-                // Añadir marcador (opcional)
-                L.marker([51.505, -0.09]).addTo(map)
-                    .bindPopup('Ubicación del grupo')
-                    .openPopup();
-            } else {
-                // Si el mapa ya existe, solo actualizamos su tamaño
-                map.invalidateSize();
-            }
-        });
-
-        // Eliminar el mapa cuando el modal se cierra
-        $('#mapModal').on('hidden.bs.modal', function () {
-            if (map) {
-                map.remove(); // Eliminar la instancia del mapa
-                map = null;    // Reiniciar la variable map
-            }
-        });
-    });
-</script>
-<script>
-    $(document).ready(function(){
-        $('tr.clickable').on('click', function(){
-            var target = $(this).data('target');
-            var $target = $(target);
-            $target.collapse('toggle');
-            var expanded = $(this).attr('aria-expanded') === 'true';
-            $(this).attr('aria-expanded', !expanded);
-        });
-    
-        // Evitar que el clic en los botones internos cierre la fila
-        $(document).on('click', '.edit-optional, .add-optional', function(e) {
-            e.stopPropagation();
-        });
-    });
-    </script>
 {% endblock %}
 

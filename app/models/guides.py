@@ -12,5 +12,4 @@ class Guides(Base):
     mail = Column(String(255))
     passaport = Column(String(255))
     active = Column(Boolean)
-    circuit = Column(String(255))
     comment = Column(String(255))

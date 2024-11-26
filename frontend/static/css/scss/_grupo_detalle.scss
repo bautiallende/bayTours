@@ -1,0 +1,160 @@
+.thead-custom {
+    background-color: #BDD8F1 !important;
+}
+
+.ms-2 .edit-icon {
+    opacity: 0;
+    transition: opacity 0.2s;
+    color: #007bff;
+}
+
+.card-body p:hover .edit-icon {
+    opacity: 1;
+}
+
+.edit-icon {
+    opacity: 0;
+    transition: opacity 0.2s;
+    color: #007bff;
+}
+
+/* Mostrar el icono al pasar el cursor sobre el párrafo */
+.card-body p:hover .edit-icon {
+    opacity: 1;
+}
+
+
+/* Ajustar márgenes y padding */
+h3 {
+    margin-top: 3px;
+    margin-bottom: 3px;
+}
+.mb-1 {
+margin-bottom: .1px !important;
+margin-top: .1px !important;
+}
+/* Centrar el estado "Activo" */
+.badge {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+/* Hacer que las tarjetas tengan la misma altura */
+.card {
+    height: 100%;
+}
+
+/* Estilos para hacer el encabezado de la tabla fijo */
+.table-responsive {
+    max-height: 750px; /* Ajusta esta altura según tus necesidades */
+    overflow-y: auto;
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    background-color: #BDD8F1; /* Asegúrate de que coincida con el color de fondo del encabezado */
+    z-index: 2; /* Asegura que el encabezado esté por encima del contenido */
+}
+
+/* Opcional: estilo para las sombras */
+.table thead th::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 1px;
+    background-color: #ddd;
+}
+
+/* Hacer que el cursor sea de puntero en filas clicables */
+.clickable {
+    cursor: pointer;
+}
+.clickable:hover {
+    background-color: #f5f5f5;
+}
+.collapse-icon {
+    float: right;
+    font-size: 0.9em;
+    margin-top: 4px;
+}
+/* Estilos para separar los nombres de las actividades */
+.activity-name {
+    margin: 0;
+    padding: 0;
+}
+.activity-name:not(:last-child) {
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 5px;
+}
+
+/* Ajustar el padding en las celdas */
+td {
+    vertical-align: top;
+    padding: 8px;
+}
+
+/* Ocultar el contenido contraído cuando la fila está expandida */
+//tr[aria-expanded="true"] .contracted-content {
+//    display: none;
+//}
+
+/* Rotar el icono al expandir */
+tr.clickable .collapse-icon i {
+    transition: transform 0.2s;
+}
+
+//tr[aria-expanded="true"] .collapse-icon i {
+//    transform: rotate(180deg);
+//}
+
+/* Estilos para el encabezado personalizado */
+.thead-custom th {
+    background-color: #BDD8F1;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+/* Asegurar que el contenido de la tabla permita el scroll */
+.table-responsive {
+    max-height: 750px; /* Ajusta según tus necesidades */
+    overflow-y: auto;
+}
+
+
+//* Estilo para la columna de la ciudad actual (fondo verde claro) */
+.current-city {
+    background-color: #E7FBE6 !important; 
+}
+
+/* Estilo para la columna de fechas pasadas (fondo rojo claro) */
+.past-city {
+    background-color: #FFEFEF !important; 
+}
+
+/* Ajustes para el encabezado de la ciudad actual */
+.thead-custom th.current-city {
+    background-color: #E7FBE6 !important; 
+}
+
+/* Ajustes para el encabezado de fechas pasadas */
+.thead-custom th.past-city {
+    background-color: #FFEFEF !important; 
+}
+
+.modal-content {
+    background-color: #f9f9f9;
+}
+
+.modal-header {
+    background-color: #e0f7e9;
+}
+
+.modal-footer .btn-primary {
+    background-color: #a5d6a7;
+    border-color: #a5d6a7;
+}
+

@@ -1,0 +1,34 @@
+
+// Archivo: _modals.scss
+
+@use 'variables';
+
+// Estilos para el encabezado del modal
+.modal-header {
+    background-color: variables.$primary-color;
+    color: variables.$text-color;
+}
+
+// Estilos para los botones del modal
+.modal-footer .btn-custom {
+    background-color: variables.$primary-color;
+    color: variables.$text-color;
+    border: none;
+}
+
+.modal-footer .btn-secondary {
+    background-color: #6c757d;
+    color: variables.$text-color;
+}
+
+// Estilos para los campos del modal
+.modal-body .form-group {
+    margin-bottom: 15px;
+}
+
+// Estilos para el switch en el modal
+.custom-control-label::after,
+.custom-control-label::before {
+    top: 0.25rem;
+    left: -2rem;
+}

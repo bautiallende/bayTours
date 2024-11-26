@@ -12,6 +12,32 @@ async def new_group(db:AsyncSession, id_group:str, pax:int, circuit_name:str, fl
     return response
 
 
+async def update_guide(db:AsyncSession, id_group:str, id_guide:int):
+    handler = groups_handlers.get('update_guide')
+    response = await handler(db=db, id_group=id_group, id_guide=id_guide)
+    return response
+
+
+async def update_operations(db:AsyncSession, id_group:str, id_operations:str):
+    handler = groups_handlers.get('set_operations')
+    response = await handler(db=db, id_group=id_group, id_operations=id_operations)
+    return response
+    
+
+async def update_assistant(db:AsyncSession, id_group:str, id_assistant:str):
+    handler = groups_handlers.get('set_assistant')
+    response = await handler(db=db, id_group=id_group, id_assistant=id_assistant)
+    return response
+
+
+async def update_responsable_hotel(db:AsyncSession, id_group:str, id_responsible_hotels:str):
+    handler = groups_handlers.get('set_responsable_hotel')
+    response = await handler(db=db, id_group=id_group, id_responsible_hotels=id_responsible_hotels)
+    return response
+
+
+
+
 async def get_group(db:AsyncSession, id_group:str):
     response = await group_function.get_group(db=db, id_group=id_group)
     return response 

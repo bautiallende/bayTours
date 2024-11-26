@@ -13,9 +13,12 @@ from google_sheets import export_to_sheets, SCOPES, REDIRECT_URI, CREDENTIALS
 from starlette.middleware.sessions import SessionMiddleware
 from google_auth_oauthlib.flow import Flow
 from fastapi.responses import JSONResponse
+from fastapi import Body
+from fastapi import Query
+import requests
 
 
-
+from datetime import datetime
 
 
 
@@ -132,6 +135,7 @@ async def grupos(
 @app.post("/nueva_rooming_list", response_class=HTMLResponse)
 async def nueva_rooming_list_post(request: Request):
     # Aquí procesarás el formulario para cargar la rooming list
+    print('si ingreso al endpoint de nueva rooming list')
     return templates.TemplateResponse("nueva_rooming_list.html", {"request": request, "mensaje": "Rooming list cargada correctamente"})
 
 
@@ -217,32 +221,293 @@ async def grupo_detalle(request: Request, id_group: str, table: str = "clientes"
         async with httpx.AsyncClient() as client:
             response = await client.get(backend_url, params=params)
             response.raise_for_status()
-            group_data = response.json()
+            data = response.json()
     except Exception as e:
         print(f"Error al obtener los datos del grupo: {e}")
         group_data = []
-    print(f'group data obtenido del endpoint: {group_data}')
     
-    table_data = group_data[1] if len(group_data) > 1 else []
+    
+    group_data = data.get('group_data', {})
+    table_data = data.get('table_data', [])
+    itinerary = data.get('itinerary', [])
 
-    print(f'\ntable data: {table_data}\n')
+    print(f'group data obtenido del endpoint: \n{group_data}\n')
+    print(f'table data obtenido del endpoint: \n{table_data}\n')
+    print(f'itinerary obtenido del endpoint: \n{itinerary}\n')
+
+    if itinerary:    
+        for city in itinerary:
+            if 'start_date' in city and city['start_date']:
+                city['start_date_obj'] = datetime.strptime(city['start_date'], '%d-%m-%Y').date()
+            else:
+                city['start_date_obj'] = None
+            if 'end_date' in city and city['end_date']:
+                city['end_date_obj'] = datetime.strptime(city['end_date'], '%d-%m-%Y').date()
+            else:
+                city['end_date_obj'] = None
+
+    
+    # Obtener las fechas de inicio y fin del grupo
+    starting_date = group_data.get('start_date', None)
+    ending_date = group_data.get('end_date', None)
+    
+
+    current_date = datetime.utcnow().date()
+    print(f'current_date es: {current_date}')
     
     return templates.TemplateResponse("grupo_detalle.html", {
         "request": request,
-        "group_data": group_data[0] if group_data else {},
+        "group_data": group_data,
         "table_data": table_data,
+        "itinerary": itinerary,
         "id_group": id_group,
-        "current_table": table
+        "current_table": table,
+        "current_date": current_date,
+        "starting_date": starting_date,
+        "ending_date": ending_date
         })
     
     
     
-    # return templates.TemplateResponse("grupo_detalle.html", {
-    #     "request": request,
-    #     "group_data": group_data[0] if group_data else {},
-    #     "id_group": id_group,
-    #     "table": table
-    # })
+@app.get("/grupo/{id_group}/available_guides")
+async def get_available_guides(id_group: str, starting_date: str = Query(None), ending_date: str = Query(None)):
+    print(f"Fechas de inicio y fin recibidas: {starting_date}, {ending_date}")
+
+    backend_url = "http://127.0.0.1:8000/guides/get_group_dispo"
+
+    if starting_date:
+        try:
+            starting_date_obj = datetime.strptime(starting_date, '%d/%m/%Y %H:%M')
+            starting_date_str = starting_date_obj.strftime('%Y-%m-%d')  # Modificar el formato
+        except ValueError:
+            starting_date_str = starting_date  # Usar el valor tal cual si no coincide el formato
+
+    if ending_date:
+        try:
+            ending_date_obj = datetime.strptime(ending_date, '%d/%m/%Y %H:%M')
+            ending_date_str = ending_date_obj.strftime('%Y-%m-%d')  # Modificar el formato
+        except ValueError:
+            ending_date_str = ending_date
+
+    print("Fechas de inicio y llegada "+ starting_date_str, ending_date_str)
+
+    params = {
+        "starting_date": starting_date_str,
+        "ending_date": ending_date_str,
+        "id_group": id_group
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(backend_url, params=params)
+            response.raise_for_status()
+            data = response.json()
+            return JSONResponse(content=data)
+    except Exception as e:
+        print(f"Error al obtener los guías disponibles: {e}")
+        return JSONResponse(content={"error": "Error al obtener los guías disponibles"}, status_code=500)
+    
+
+
+@app.post("/grupo/{id_group}/update_guide")
+async def update_guide(id_group: str, request: Request, data: dict = Body(...)):
+    backend_url = "http://127.0.0.1:8000/groups/update_guide"
+
+    # Obtener el id_guide desde el cuerpo de la petición
+    id_guide = data.get('guide_id')
+
+    params = {
+        "id_group": id_group,
+        "id_guide": id_guide
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.put(backend_url, params=params)
+            print(f"response antes: {response}")
+            response.raise_for_status()
+            data = response.json()
+            print(f"response despues: {data}")
+            return JSONResponse(content=data)
+    except Exception as e:
+        print(f"Error al actualizar el guía: {e}")
+        return JSONResponse(content={"status": "error", "message": "Error al actualizar el guía"}, status_code=500)
+
+
+
+@app.get("/grupo/{id_group}/available_bus_companies")
+async def get_available_bus_companies(id_group: str):
+    print(f"Endpoint '/grupo/{id_group}/available_bus_companies' llamado")
+    backend_url = "http://127.0.0.1:8000/transports/companys"
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(backend_url)
+            response.raise_for_status()
+            data = response.json()
+            print(f"Información de las compañías de bus: {data}")
+            return JSONResponse(content=data)
+    except Exception as e:
+        print(f"Error al obtener las compañías de buses: {e}")
+        return JSONResponse(content={"error": "Error al obtener las compañías de buses"}, status_code=500)
+
+
+
+@app.post("/grupo/{id_group}/update_bus")
+async def update_bus(id_group: str, request: Request, data: dict = Body(...)):
+    backend_url = "http://127.0.0.1:8000/transports/update_bus"
+
+    print(f'id_group: {id_group}')
+
+    company_id = data.get('company_id')
+    bus_code = data.get('bus_code')
+
+    params = {
+        "id_group": id_group,
+        "company_id": company_id,
+        "bus_code": bus_code
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.put(backend_url, params=params)
+            response.raise_for_status()
+            data = response.json()
+            return JSONResponse(content=data)
+    except Exception as e:
+        print(f"Error al actualizar el bus: {e}")
+        return JSONResponse(content={"status": "error", "message": "Error al actualizar el bus"}, status_code=500)
+    
+
+
+@app.get("/grupo/{id_group}/available_operations_agents")
+async def get_available_operations_agents(id_group: str):
+    backend_url = "http://127.0.0.1:8000/operations/get_operations_dispo"
+
+    params = {
+        "id_group": id_group
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(backend_url, params=params)
+            response.raise_for_status()
+            data = response.json()
+            return JSONResponse(content=data)
+    except Exception as e:
+        print(f"Error al obtener los agentes de operaciones: {e}")
+        return JSONResponse(content={"error": "Error al obtener los agentes de operaciones"}, status_code=500)
+
+
+
+@app.post("/grupo/{id_group}/update_operations_agent")
+async def update_operations_agent(id_group: str, request: Request, data: dict = Body(...)):
+    backend_url = "http://127.0.0.1:8000/groups/update_operations"
+
+    id_operations = data.get('id_operations')
+
+    params = {
+        "id_group": id_group,
+        "id_operations": id_operations
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.put(backend_url, params=params)
+            response.raise_for_status()
+            data = response.json()
+            print(f'la data es la siguiente: {data}')
+            return JSONResponse(content=data)
+    except Exception as e:
+        print(f"Error al actualizar el agente de operaciones: {e}")
+        return JSONResponse(content={"status": "error", "message": "Error al actualizar el agente de operaciones"}, status_code=500)
+
+
+
+@app.get("/grupo/{id_group}/available_assistants")
+async def get_available_assistants(id_group: str):
+    backend_url = "http://127.0.0.1:8000/assistants/get_assistants"
+
+    params = {
+        "id_group": id_group
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(backend_url, params=params)
+            response.raise_for_status()
+            data = response.json()
+            return JSONResponse(content=data)
+    except Exception as e:
+        print(f"Error al obtener los asistentes: {e}")
+        return JSONResponse(content={"error": "Error al obtener los asistentes"}, status_code=500)
+    
+
+
+@app.post("/grupo/{id_group}/update_assistant")
+async def update_assistant(id_group: str, request: Request, data: dict = Body(...)):
+    backend_url = "http://127.0.0.1:8000/groups/update_assistante"
+
+    id_assistant = data.get('id_assistant')
+
+    params = {
+        "id_group": id_group,
+        "id_assistant": id_assistant
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.put(backend_url, params=params)
+            response.raise_for_status()
+            data = response.json()
+            return JSONResponse(content=data)
+    except Exception as e:
+        print(f"Error al actualizar el asistente: {e}")
+        return JSONResponse(content={"status": "error", "message": "Error al actualizar el asistente"}, status_code=500)
+
+
+
+@app.get("/grupo/{id_group}/available_responsible_hotels")
+async def get_available_responsible_hotels(id_group: str):
+    backend_url = "http://127.0.0.1:8000/responsable_hotels/get_responsable_hotels"
+
+    params = {
+        "id_group": id_group
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(backend_url, params=params)
+            response.raise_for_status()
+            data = response.json()
+            return JSONResponse(content=data)
+    except Exception as e:
+        print(f"Error al obtener los responsables de hoteles: {e}")
+        return JSONResponse(content={"error": "Error al obtener los responsables de hoteles"}, status_code=500)
+
+
+
+@app.post("/grupo/{id_group}/update_responsible_hotels")
+async def update_responsible_hotels(id_group: str, request: Request, data: dict = Body(...)):
+    backend_url = "http://127.0.0.1:8000/groups/update_responsable_hotels"
+
+    id_responsible_hotels = data.get('id_responsible_hotels')
+
+    params = {
+        "id_group": id_group,
+        "id_responsible_hotels": id_responsible_hotels
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.put(backend_url, params=params)
+            response.raise_for_status()
+            data = response.json()
+            return JSONResponse(content=data)
+    except Exception as e:
+        print(f"Error al actualizar el responsable de hoteles: {e}")
+        return JSONResponse(content={"status": "error", "message": "Error al actualizar el responsable de hoteles"}, status_code=500)
+
 
 
 

@@ -19,4 +19,5 @@ async def get_by_group_id(db: AsyncSession, id_group:str, id_optional:int|None):
         result = db.execute(select(Activity).join(Days, Days.id == Activity.id_days).where(Days.id_group == id_group))
     
     activity_data = result.scalars().all()
+    print(f'Activity data en get_by_group_id: {activity_data}')
     return activity_data

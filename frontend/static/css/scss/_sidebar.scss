@@ -1,0 +1,91 @@
+// Archivo: _sidebar.scss
+
+@use 'variables';
+
+// Estilos para el menú lateral
+.sidebar {
+    position: fixed; // Posiciona el menú lateral de forma fija en la pantalla
+    top: 12%; // Separación desde la parte superior
+    left: 0; // Alineado al lado izquierdo
+    height: calc(95% - #{variables.$header-height}); // Altura del menú, restando el espacio del encabezado
+    width: variables.$sidebar-width-collapsed; // Ancho cuando está contraído
+    background-color: variables.$primary-color; // Color de fondo del menú lateral
+    overflow-x: hidden; // Oculta el desbordamiento horizontal
+    transition: width variables.$transition-duration ease; // Transición suave al cambiar el ancho
+    z-index: 1000; // Asegura que el menú esté por encima de otros elementos
+    border-top-right-radius: 15px; // Bordes superiores redondeados
+    border-bottom-right-radius: 15px; // Bordes inferiores redondeados
+    display: flex; // Utiliza flexbox
+    flex-direction: column; // Organiza los elementos verticalmente
+}
+
+// Estilos cuando el menú lateral está expandido (al pasar el cursor)
+.sidebar:hover {
+    width: variables.$sidebar-width-expanded; // Ancho cuando está expandido
+}
+
+// Estilos para la lista de navegación dentro del menú lateral
+.sidebar .nav {
+    flex-grow: 1; // Permite que la lista ocupe el espacio disponible
+}
+
+// Estilos para los enlaces dentro del menú lateral
+.sidebar .nav-link {
+    white-space: nowrap; // Evita que el texto se divida en varias líneas
+    overflow: hidden; // Oculta el desbordamiento del texto
+    text-overflow: ellipsis; // Añade puntos suspensivos si el texto es muy largo
+    padding: 15px; // Espaciado interno de los enlaces
+    display: flex; // Utiliza flexbox para alinear los elementos
+    align-items: center; // Centra verticalmente los elementos dentro del enlace
+    justify-content: center; // Centra horizontalmente cuando está contraído
+    color: variables.$text-color; // Color del texto y los iconos
+}
+
+// Estilos para los iconos en los enlaces del menú
+.sidebar .nav-link i {
+    font-size: 1.5em; // Tamaño de los iconos
+    color: variables.$text-color; // Color de los iconos
+}
+
+// Ocultar el texto de los enlaces cuando el menú está contraído
+.sidebar .nav-link span {
+    display: none; // Oculta el texto
+}
+
+// Cuando el menú está expandido, mostrar el texto y ajustar la alineación
+.sidebar:hover .nav-link {
+    justify-content: flex-start; // Alinea el contenido al inicio cuando está expandido
+}
+
+.sidebar:hover .nav-link span {
+    display: inline; // Muestra el texto
+    margin-left: 10px; // Espacio entre el icono y el texto
+}
+
+// Estilos al pasar el cursor sobre los enlaces del menú
+.sidebar .nav-link:hover {
+    background-color: variables.$secondary-color; // Cambia el color de fondo al pasar el cursor
+    color: variables.$primary-color; // Cambia el color del texto
+}
+
+// Estilos para el separador
+.sidebar-divider {
+    border-top: 1px solid  variables.$secondary-color; // Línea separadora
+    margin: 0 15px; // Márgenes laterales
+}
+
+// Estilos para el enlace activo (opcional)
+.sidebar .nav-link.active {
+    background-color:  variables.$secondary-color; // Color de fondo para el enlace activo
+    color:  variables.$primary-color; // Color del texto para el enlace activo
+}
+
+// Media queries para dispositivos móviles
+@media (max-width: 768px) {
+    .sidebar {
+        width:  variables.$sidebar-width-expanded; // Ancho fijo en dispositivos móviles
+    }
+    .main-content {
+        margin-left:  variables.$sidebar-width-expanded; // Ajuste del margen izquierdo
+    }
+}

@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .routers import group, clients, upload, hotel
+from .routers import group, clients, upload, hotel, guide, transport, operations, assistant, responsable_hotels
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
@@ -24,6 +24,11 @@ app.include_router(group.router)
 app.include_router(clients.router)
 app.include_router(upload.router)
 app.include_router(hotel.router)
+app.include_router(guide.router)
+app.include_router(transport.router)
+app.include_router(operations.router)
+app.include_router(assistant.router)
+app.include_router(responsable_hotels.router)
 
 
 @app.get("/")

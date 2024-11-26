@@ -4,6 +4,8 @@ from sqlalchemy.future import select
 from app.models.optional_purchase import OptionalPurchase
 from app.models.clients import Clients
 from app.models.optionals import Optionals
+from app.models.days import Days
+from datetime import timedelta, datetime
 
 
 async def create_group(db:AsyncSession, group_data:ClientGroup):
@@ -51,6 +53,12 @@ async def get_grouped_client_data(db: AsyncSession, id_group:str):
             row.second_name, row.birth_date, row.sex
         )
         
+        birth_date = row.birth_date  # reemplaza row.birth_date con el valor real
+        if birth_date:
+            age = datetime.now().year - birth_date.year - ((datetime.now().month, datetime.now().day) < (birth_date.month, birth_date.day))
+        else:
+            age = ''
+
         # Si el cliente no existe en el diccionario, inicializar su estructura
         if client_key not in clients_data:
             clients_data[client_key] = {
@@ -58,7 +66,7 @@ async def get_grouped_client_data(db: AsyncSession, id_group:str):
                 "mother_surname": row.mother_surname,
                 "first_name": row.first_name,
                 "second_name": row.second_name,
-                "birth_date": row.birth_date,
+                "age": age,
                 "sex": row.sex,
                 "city_optionals": {}  # Diccionario para agrupar opcionales por ciudad
             }
@@ -81,5 +89,47 @@ async def get_grouped_client_data(db: AsyncSession, id_group:str):
         })
 
     # Convertir el diccionario de clientes en una lista para la salida final
-    output_data = list(clients_data.values())
-    return output_data
+    group_data = list(clients_data.values())
+    
+    # Obtener datos de `days` para crear el `itinerary`
+    itinerary_result = db.execute(
+        select(Days.city, Days.date)
+        .where(Days.id_group == id_group)
+        .order_by(Days.date)
+    )
+    
+    days_rows = itinerary_result.fetchall()
+    
+    # Construir `itinerary` agrupando fechas por ciudad
+    itinerary = []
+    current_city = None
+    start_date = None
+    end_date = None
+
+    for row in days_rows:
+        if row.city != current_city:
+            # Añadir la ciudad previa al itinerario si ya tenemos datos
+            if current_city is not None:
+                itinerary.append({
+                    "city": current_city,
+                    "start_date": start_date.strftime("%d-%m-%Y"),
+                    "end_date": end_date.strftime("%d-%m-%Y") 
+                })
+            # Resetear para la nueva ciudad
+            current_city = row.city
+            start_date = row.date
+            end_date = row.date + timedelta(days=1)
+        else:
+            # Extender la estadía en la ciudad actual
+            end_date = row.date + timedelta(days=1)
+
+    # Añadir la última ciudad al itinerario
+    if current_city is not None:
+        itinerary.append({
+            "city": current_city,
+            "start_date": start_date.strftime("%d-%m-%Y"),
+            "end_date": end_date.strftime("%d-%m-%Y")
+        })
+
+    
+    return group_data, itinerary

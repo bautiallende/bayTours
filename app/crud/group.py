@@ -5,6 +5,7 @@ from sqlalchemy.orm import aliased
 from app.schemas.group import GroupCreate
 from app.models.group import Group
 from app.models.transport import Transport
+from app.models.transport_company import TransportCompany
 from app.models.assistant import Assistant
 from app.models.operations import Operations
 from app.models.hotel import Hotel
@@ -12,13 +13,10 @@ from app.models.guides import Guides
 from app.models.hotel_reservation import HotelReservation
 from app.models.days import Days
 from app.models.circuits import Circuits
+from app.models.responsables_hotels import ResponsablesHotels
 from sqlalchemy.future import select
 from datetime import datetime
 
-async def get_group(db: AsyncSession, id_group: str):
-    '''Gets group by id_group'''
-    result =  db.execute(select(Group).filter(Group.id_group == id_group))
-    return result.scalars().first()
 
 
 async def create_group(db: AsyncSession, group_data: Group):    
@@ -27,6 +25,18 @@ async def create_group(db: AsyncSession, group_data: Group):
     db.refresh(group_data)
     return group_data
 
+
+async def update_group(db: AsyncSession, group_data: Group):
+    db.commit()
+    db.refresh(group_data)
+    return group_data
+
+
+
+async def get_group(db: AsyncSession, id_group: str):
+    '''Gets group by id_group'''
+    result =  db.execute(select(Group).filter(Group.id_group == id_group))
+    return result.scalars().first()
 
 
 async def get_tabla_group(db: AsyncSession, id_grupo: str = None, bus_company: str = None, 
@@ -42,9 +52,12 @@ async def get_tabla_group(db: AsyncSession, id_grupo: str = None, bus_company: s
 
     query = select(
         Group.id_group,
-        Transport.company.label('bus_company'),
+        TransportCompany.name.label('bus_company'),
+        Transport.bus.label('bus_code'),
         Guides.name.label('guide_name'),
+        Guides.surname.label('guide_surname'),
         Operations.name.label('operaciones_name'),
+        Operations.surname.label('operaciones_surname'),
         Group.status,
         Group.start_date,
         Group.initial_flight,
@@ -53,14 +66,18 @@ async def get_tabla_group(db: AsyncSession, id_grupo: str = None, bus_company: s
         Group.end_flight,
         Group.datetime_end_flight,
         Assistant.name.label('nombre_asistente'),
+        Assistant.surname.label('apellido_asistente'),
         Group.PAX,
         Group.QR, 
-        Group.id_responsible_hotels,
+        ResponsablesHotels.name.label('nombre_responsable_hotels'),
+        ResponsablesHotels.surname.label('apellido_responsable_hotels'),
         Circuits.name.label('nombre_circuito')
         ).join(Guides, Group.id_guide == Guides.id_guide, isouter=True
         ).join(Transport, Group.id_transport == Transport.id_transport, isouter=True
+        ).join(TransportCompany, Transport.company_id == TransportCompany.company_id, isouter=True
+        ).join(ResponsablesHotels, ResponsablesHotels.id_responsible_hotels == Group.id_responsible_hotels, isouter=True
         ).join(Operations, Group.id_operations == Operations.id_operation, isouter=True
-        ).join(Assistant, Group.assistant_id == Assistant.id_assistant, isouter=True
+        ).join(Assistant, Group.id_assistant == Assistant.id_assistant, isouter=True
         ).join(Circuits, Group.circuit == Circuits.id_circuit, isouter=True
                ).distinct(Group.id_group) 
 
@@ -69,7 +86,7 @@ async def get_tabla_group(db: AsyncSession, id_grupo: str = None, bus_company: s
     if id_grupo and id_grupo is not None and id_grupo != 'None':
         query = query.filter(Group.id_group.ilike(f"%{id_grupo}%"))  # Búsqueda parcial por ID de grupo
     if bus_company:
-        query = query.filter(Transport.company == bus_company)
+        query = query.filter(TransportCompany.name == bus_company)
     if guide_name:
         query = query.filter(Guides.name == guide_name)
     if operaciones_name:
@@ -89,7 +106,7 @@ async def get_tabla_group(db: AsyncSession, id_grupo: str = None, bus_company: s
     if sort_by:
         sort_column = {
             "id_grupo": Group.id_group,
-            "bus_company": Transport.company,
+            "bus_company": TransportCompany.name,
             "guide_name": Guides.name,
             "operaciones_name": Operations.name,
             "status": Group.status,
@@ -130,7 +147,12 @@ async def get_tabla_group(db: AsyncSession, id_grupo: str = None, bus_company: s
                 .order_by(Days.date.asc())
                 .limit(1)
             )
-            city, hotel_name = first_stage.fetchone()
+            result = first_stage.fetchone()
+            
+            if result:
+                city, hotel_name = result
+            else:
+                city, hotel_name = "Sin información", "Sin información"
 
         elif start_date <= current_date <= end_date:
             # El tour está en progreso
@@ -142,7 +164,12 @@ async def get_tabla_group(db: AsyncSession, id_grupo: str = None, bus_company: s
                 .order_by(Days.date.desc())
                 .limit(1)
             )
-            city, hotel_name = current_location.fetchone()
+            result = current_location.fetchone()
+
+            if result:
+                city, hotel_name = result
+            else:
+                city, hotel_name = "Sin información", "Sin información"
 
         else:
             # El tour ya ha terminado
@@ -160,20 +187,20 @@ async def get_tabla_group(db: AsyncSession, id_grupo: str = None, bus_company: s
         # Agregar los datos del grupo y la ubicación actual a la lista
         group_data.append({
             "id_group": group.id_group,
-            "bus_company": group.bus_company,
-            "guide_name": group.guide_name,
-            "operaciones_name": group.operaciones_name,
+            "bus_company": (group.bus_company + ' - ' + group.bus_code) if group.bus_company and group.bus_code else group.bus_company,
+            "guide_name": (group.guide_name + ' ' + group.guide_surname) if group.guide_name and group.guide_surname else group.guide_name,
+            "operaciones_name": (group.operaciones_name + ' ' + group.operaciones_surname) if group.operaciones_name and group.operaciones_surname else group.operaciones_name,
             "status": group.status,
             "start_date": formatted_start_date,
             "start_flight": fotmatted_initial_flight + " (" + group.initial_flight + ")" if group.initial_flight != None and fotmatted_initial_flight != None else None ,
             "end_date": formatted_end_date,
             "end_flight": fotmatted_end_flight + " (" + group.end_flight + ")" if group.end_flight != None and fotmatted_end_flight != None else None ,
-            "nombre_asistente": group.nombre_asistente,
+            "nombre_asistente": (group.nombre_asistente + " " + group.apellido_asistente) if group.nombre_asistente and group.apellido_asistente else group.nombre_asistente,
             "PAX": group.PAX,
             "QR": group.QR,
             "ciudad_actual": city,
             "hotel_actual": str(hotel_name), 
-            "id_responsible_hotels": group.id_responsible_hotels,
+            "id_responsible_hotels":(group.nombre_responsable_hotels + ' ' + group.apellido_responsable_hotels) if group.nombre_responsable_hotels and group.apellido_responsable_hotels else group.nombre_responsable_hotels,
             "nombre_circuito": group.nombre_circuito,   
         })
     
@@ -210,8 +237,8 @@ async def get_filter_options(db: AsyncSession):
     result['guides'] = [row.name for row in guides.fetchall()]
 
     # Opciones de compañías de bus
-    transport = db.execute(select(Transport.company).distinct())
-    result['bus_companies'] = [row.company for row in transport.fetchall()]
+    transport = db.execute(select(TransportCompany.name).distinct())
+    result['bus_companies'] = [row.name for row in transport.fetchall()]
 
     # Opciones de operaciones
     operations = db.execute(select(Operations.name).distinct())

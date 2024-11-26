@@ -8,7 +8,10 @@ from app.service import clients as clients_services
 from app.service import circuits as circuit_services
 from app.service import days as days_services
 from app.crud import client_group as client_group_functions
-
+from app.service import guide_availability as guide_availability_functions
+from app.schemas.guide_availability import PeriodAllocation
+from app.service import guide as guide_service
+from app.service import transport as transport_services
 
 
 
@@ -34,9 +37,6 @@ class GroupsHandler(BaseHandler):
             })
 
 
-
-            
-
             # Guardar en la base de datos
             result = await group_functions.create_group(db=db, group_data=group_data)
 
@@ -47,6 +47,73 @@ class GroupsHandler(BaseHandler):
                 result = await days_services.new_group(db=db, id_group=id_group, arrival_date=result.start_date, departure_date=result.end_date, id_circuit=circuit_data.id_circuit)
             
             return
+        
+
+    async def set_guide(self, db:AsyncSession, id_group:str, id_guide:int):
+        group_data = await group_functions.get_group(db=db, id_group=id_group)
+
+        if group_data.id_guide:
+            # aca debemos borrar la dispo del guia actual.
+            responde = await guide_availability_functions.delete_slot(db=db, id_guide=group_data.id_guide, id_group=id_group)
+
+
+        group_data.id_guide = id_guide
+
+        result = await group_functions.update_group(db=db, group_data=group_data)
+
+        slot = PeriodAllocation(**{
+            "id_guide": id_guide,
+            "start_date": group_data.start_date.strftime('%Y-%m-%d'),
+            "end_date": group_data.end_date.strftime('%Y-%m-%d'),
+            'id_group': id_group,
+            "reason":''
+            })
+        response = await guide_availability_functions.update_guide_availability(db=db, slot=slot)
+        new_guide = await guide_service.get_guide(db=db, id_guide=id_guide)
+
+        return new_guide
+    
+
+
+    async def set_operations(self, db:AsyncSession, id_group:str, id_operations:str):
+        group_data = await group_functions.get_group(db=db, id_group=id_group)
+
+        if not group_data:
+            return "El grupo no existe"
+        
+        group_data.id_operations = id_operations
+
+        result = await group_functions.update_group(db=db, group_data=group_data)
+
+        return result
+
+
+    async def set_assistant(self, db:AsyncSession, id_group:str, id_assistant:str):
+        group_data = await group_functions.get_group(db=db, id_group=id_group)
+
+        if not group_data:
+            return "El grupo no existe"
+        
+        group_data.id_assistant = id_assistant
+
+        result = await group_functions.update_group(db=db, group_data=group_data)
+
+        return result
+    
+
+    async def set_responsable_hotels(self, db:AsyncSession, id_group:str, id_responsible_hotels:str):
+        group_data = await group_functions.get_group(db=db, id_group=id_group)
+
+        if not group_data:
+            return "El grupo no existe"
+        
+        group_data.id_responsible_hotels = id_responsible_hotels
+
+        result = await group_functions.update_group(db=db, group_data=group_data)
+        return result
+ 
+        
+
 
 
 
@@ -82,13 +149,24 @@ class GroupsHandler(BaseHandler):
     async def get_group_data(self, db:AsyncSession, id_group:str, table:str):
         group_data = (await group_functions.get_tabla_group(db=db, id_grupo=id_group))[0]
 
+        responde = {}
         print(f'grupos: {group_data}')
 
         if table == 'clientes':
             table_data = await clients_services.get_clients_by_group_id(db=db, id_group=id_group)
+            responde = {
+                "group_data":group_data, 
+                'table_data':table_data,
+                'itinerary':None 
+                }   
         
         elif table == 'opcionales':
-            table_data = await client_group_functions.get_grouped_client_data(db=db, id_group=id_group) 
+            table_data, itinerary  = await client_group_functions.get_grouped_client_data(db=db, id_group=id_group) 
+            responde = {
+                "group_data":group_data, 
+                'table_data':table_data,
+                'itinerary':itinerary
+                }   
 
         elif table == '':
             pass
@@ -102,7 +180,6 @@ class GroupsHandler(BaseHandler):
         else:
             table_data = None
 
-        
+      
 
-
-        return group_data, table_data
+        return responde

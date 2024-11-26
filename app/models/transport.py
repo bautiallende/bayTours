@@ -7,7 +7,7 @@ class Transport(Base):
     id_transport = Column(Integer, primary_key=True, index=True)
     id_driver = Column(Integer)
     bus = Column(String(255))
-    company = Column(String(255))
+    company_id = Column(String(255))
     status_bus = Column(String(255))
     parking_heathrow = Column(Boolean)
     parking_update_datetime = Column(DateTime)
