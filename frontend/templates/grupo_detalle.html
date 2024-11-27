@@ -46,9 +46,11 @@
                             <!-- Estado posicionado más arriba -->
                             <div class="align-self-start mt-2">
                                 <span class="badge badge-pill badge-success" style="font-size: 1.2rem; padding: 10px;">{{ group_data.status | capitalize }}</span>
-                                <p>
-                                    <strong>QR:</strong> {{ 'Sí' if group_data.QR else 'No' }}
-                                    <a href="#" class="ms-2 edit-icon"><i class="fas fa-edit"></i></a>
+                                <p style="padding-top: 35%;">
+                                    <strong ">QR:</strong> <span id="qrStatus"> {{ 'Sí' if group_data.QR else 'No' }}</span>
+                                    <a href="#" class="ms-2 edit-icon" data-bs-toggle="modal" data-bs-target="#editQrModal">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
                                 </p>
                             </div>
                         </div>
@@ -110,6 +112,30 @@
                 </div>
             </div>
         </div>
+        <!-- Modal para Editar Estado del QR -->
+        <div class="modal fade" id="editQrModal" tabindex="-1" aria-labelledby="editQrModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="editQrForm">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editQrModalLabel">Editar Estado del QR</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="qrSwitch" {{ 'checked' if group_data.has_qr else '' }}>
+                                <label class="form-check-label" for="qrSwitch">QR Enviado</label>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
 
         <!-- Segundo bloque (central, más ancho) -->
         <div class="col-md-5">

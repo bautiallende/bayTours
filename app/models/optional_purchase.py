@@ -14,6 +14,7 @@ class OptionalPurchase(Base):
     discount = Column(Float)
     total = Column(Float)
     purchase_date = Column(DateTime)
+    updated_purchase_date = Column(DateTime)
     place_of_purchase = Column(String(255))
     source = Column(String(255))
     payment_method = Column(String(255))

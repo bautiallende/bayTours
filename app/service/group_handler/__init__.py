@@ -10,4 +10,5 @@ groups_handlers = {
     'set_operations': groups.set_operations,
     'set_assistant': groups.set_assistant,
     'set_responsable_hotel': groups.set_responsable_hotels,
+    'set_qr':groups.set_qr,
 }

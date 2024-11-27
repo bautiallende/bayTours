@@ -36,6 +36,12 @@ async def update_responsable_hotel(db:AsyncSession, id_group:str, id_responsible
     return response
 
 
+async def update_qr(db:AsyncSession, id_group:str, has_qr:bool):
+    handler = groups_handlers.get('set_qr')
+    response = await handler(db=db, id_group=id_group, has_qr=has_qr)
+    return response
+
+
 
 
 async def get_group(db:AsyncSession, id_group:str):

@@ -111,6 +111,19 @@ class GroupsHandler(BaseHandler):
 
         result = await group_functions.update_group(db=db, group_data=group_data)
         return result
+    
+
+
+    async def set_qr(self, db:AsyncSession, id_group:str, has_qr: bool):
+        group_data = await group_functions.get_group(db=db, id_group=id_group)
+
+        if not group_data:
+            return "El grupo no existe"
+        
+        group_data.QR = has_qr
+
+        result = await group_functions.update_group(db=db, group_data=group_data)
+        return result
  
         
 

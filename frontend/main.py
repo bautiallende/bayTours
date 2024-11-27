@@ -210,6 +210,7 @@ async def oauth2callback(request: Request):
 
 @app.get("/grupo/{id_group}", response_class=HTMLResponse)
 async def grupo_detalle(request: Request, id_group: str, table: str = "clientes"):
+    print(f'\n\n BUSCANDO GRUPO... \n\n')
     backend_url = "http://127.0.0.1:8000/groups/group_data"
 
     params = {
@@ -224,7 +225,10 @@ async def grupo_detalle(request: Request, id_group: str, table: str = "clientes"
             data = response.json()
     except Exception as e:
         print(f"Error al obtener los datos del grupo: {e}")
-        group_data = []
+        # Asignar un valor predeterminado a data
+        data = {}
+        # Puedes redirigir al usuario a una página de error o mostrar un mensaje
+        return templates.TemplateResponse("error.html", {"request": request, "message": "Grupo no encontrado."})
     
     
     group_data = data.get('group_data', {})
@@ -510,6 +514,27 @@ async def update_responsible_hotels(id_group: str, request: Request, data: dict 
 
 
 
+@app.post("/grupo/{id_group}/update_qr")
+async def update_qr(id_group: str, request: Request, data: dict = Body(...)):
+    backend_url = "http://127.0.0.1:8000/groups/update_qr"
+
+    has_qr = data.get('has_qr')
+
+    params = {
+        "id_group": id_group,
+        "has_qr": has_qr
+    }
+    print(f'los params a enviar son: {params}')
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.put(backend_url, params=params)
+            response.raise_for_status()
+            data = response.json()
+            print(f'la data para el responde de update_qr es: {data}')
+            return JSONResponse(content=data)
+    except Exception as e:
+        print(f"Error al actualizar el estado del QR: {e}")
+        return JSONResponse(content={"status": "error", "message": "Error al actualizar el estado del QR"}, status_code=500)
 
 
 if __name__ == "__main__":

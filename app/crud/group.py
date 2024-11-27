@@ -79,7 +79,7 @@ async def get_tabla_group(db: AsyncSession, id_grupo: str = None, bus_company: s
         ).join(Operations, Group.id_operations == Operations.id_operation, isouter=True
         ).join(Assistant, Group.id_assistant == Assistant.id_assistant, isouter=True
         ).join(Circuits, Group.circuit == Circuits.id_circuit, isouter=True
-               ).distinct(Group.id_group) 
+               ).distinct(Group.id_group).order_by(Group.start_date.desc())
 
     print(f"valor del id_group: {id_grupo}")
     # Aplicar filtros opcionales

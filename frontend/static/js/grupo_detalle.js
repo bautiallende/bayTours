@@ -495,3 +495,51 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+
+// modal para el qr
+document.addEventListener('DOMContentLoaded', function() {
+    // Variables globales
+    const qrStatusSpan = document.getElementById('qrStatus');
+    const editQrForm = document.getElementById('editQrForm');
+    const qrSwitch = document.getElementById('qrSwitch');
+
+    editQrForm.addEventListener('submit', function(event) {
+        event.preventDefault(); // Evitamos el envío real del formulario
+
+        const hasQr = qrSwitch.checked;
+
+        // Enviar la actualización al backend
+        fetch(`/grupo/${idGroup}/update_qr`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                has_qr: hasQr
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Respuesta del backend:', data);
+
+            if (data.status === 'success') {
+                // Actualizar la interfaz con el nuevo estado del QR
+                qrStatusSpan.textContent = hasQr ? 'Sí' : 'No';
+
+                // Cerrar el modal manualmente
+                const modalElement = document.getElementById('editQrModal');
+                const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
+                modalInstance.hide();
+
+                // Mostrar una notificación o feedback al usuario
+                console.log(data.message);
+            } else {
+                // Manejar el caso de error al actualizar el estado del QR
+                console.error('Error al actualizar el estado del QR:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error al actualizar el estado del QR:', error);
+            alert('Ocurrió un error al actualizar el estado del QR. Por favor, inténtalo de nuevo.');
+        });
+    });
+});

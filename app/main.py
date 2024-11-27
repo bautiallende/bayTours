@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .routers import group, clients, upload, hotel, guide, transport, operations, assistant, responsable_hotels
+from .routers import group, clients, upload, hotel, guide, transport, operations, assistant, responsable_hotels, optionals_purchase
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
@@ -29,6 +29,7 @@ app.include_router(transport.router)
 app.include_router(operations.router)
 app.include_router(assistant.router)
 app.include_router(responsable_hotels.router)
+app.include_router(optionals_purchase.router)
 
 
 @app.get("/")

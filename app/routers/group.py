@@ -100,6 +100,24 @@ async def update_responsable_hotel(id_group:str, id_responsible_hotels:str, db:S
     return response
 
 
+@router.put('/update_qr')
+async def update_qr(id_group:str, has_qr:bool, db:Session=Depends(get_db)):
+    group_data = await group_service.update_qr(db=db, id_group=id_group, has_qr=has_qr)
+
+    if group_data:
+        response = {
+            "status": "success",
+            "message": "El código QR ha sido actualizado correctamente.",
+            "updated_group": {
+                "id_group": group_data.id_group,
+                "has_qr": group_data.QR
+                }
+            }
+        return response
+    
+    else:
+        return "grupo no encontrado"
+        
 
 
 @router.get("/get_group", response_model=group.Group)
