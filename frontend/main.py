@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from fastapi import Body
 from fastapi import Query
 import requests
+import copy
 
 
 from datetime import datetime
@@ -239,37 +240,45 @@ async def grupo_detalle(request: Request, id_group: str, table: str = "clientes"
     print(f'table data obtenido del endpoint: \n{table_data}\n')
     print(f'itinerary obtenido del endpoint: \n{itinerary}\n')
 
-    if itinerary:    
-        for city in itinerary:
-            if 'start_date' in city and city['start_date']:
-                city['start_date_obj'] = datetime.strptime(city['start_date'], '%d-%m-%Y').date()
-            else:
-                city['start_date_obj'] = None
-            if 'end_date' in city and city['end_date']:
-                city['end_date_obj'] = datetime.strptime(city['end_date'], '%d-%m-%Y').date()
-            else:
-                city['end_date_obj'] = None
 
-    
-    # Obtener las fechas de inicio y fin del grupo
-    starting_date = group_data.get('start_date', None)
-    ending_date = group_data.get('end_date', None)
-    
-
+    # Obtener la fecha actual
     current_date = datetime.utcnow().date()
-    print(f'current_date es: {current_date}')
-    
+
+    if itinerary:
+        # Convertir las fechas en el itinerario a objetos de fecha
+        for city_info in itinerary:
+            serializable_days = []
+            for day in city_info.get('days', []):
+                # Convertir la cadena de fecha a objeto date
+                if 'date' in day and day['date']:
+                    day['date_obj'] = datetime.strptime(day['date'], '%d-%m-%Y').date()
+                else:
+                    day['date_obj'] = None
+                # Crear una copia del día sin 'date_obj' para serializar
+                day_serializable = copy.deepcopy(day)
+                if 'date_obj' in day_serializable:
+                    del day_serializable['date_obj']
+                serializable_days.append(day_serializable)
+            # Agregar la lista de días serializables al city_info
+            city_info['days_serializable'] = serializable_days
+
+    client_ages = {
+        client['id_clients']: client['age']
+        for client in table_data
+        if 'id_clients' in client and 'age' in client and client['id_clients'] is not None and client['age'] is not None
+        }
+    print(client_ages)
     return templates.TemplateResponse("grupo_detalle.html", {
         "request": request,
         "group_data": group_data,
         "table_data": table_data,
         "itinerary": itinerary,
+        "client_ages": client_ages,
         "id_group": id_group,
         "current_table": table,
         "current_date": current_date,
-        "starting_date": starting_date,
-        "ending_date": ending_date
-        })
+        "datetime": datetime
+    })
     
     
     

@@ -1,6 +1,9 @@
 from .optional_purchase_handler import optionals_purchases_handlers
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.optionals_purchase import OptionalsPurchase
+from app.crud import optional_purchase as optional_purchase_functions
+
+
 
 async def create_optional_purchase(db: AsyncSession, group_number:str, id_clientes:str, packages:str, circuit_name:str, age:int):
     handler =  optionals_purchases_handlers.get('create_optional_purchase')
@@ -12,6 +15,16 @@ async def create_one(db:AsyncSession, optionals_purchase_data:OptionalsPurchase)
     handler = optionals_purchases_handlers.get('create_one')
     response = await handler(db=db, optional_purchase_data=optionals_purchase_data)
     return response
+
+
+async def get_optionals_with_id_days(db:AsyncSession, id_group:str, id_days:str):
+    result = await optional_purchase_functions.get_optionals_with_id_days(db=db, id_group=id_group, id_days=id_days)
+    return result
+
+
+async def get_client_optionals(db:AsyncSession, group_id:str, id_days:str, client_id:str):
+    result = await optional_purchase_functions.get_clients_optiona(db=db, client_id=client_id, group_id=group_id, id_days=id_days)
+    return result
 
 
 async def update_optional_purchase(db:AsyncSession, optionals_purchase_data:OptionalsPurchase):

@@ -54,3 +54,27 @@ async def delete_optional_purchase(id_group:str, client_id:str, id_activity:str,
             "message": "El opcional ha sido eliminado correctamente."
             }
     return response
+
+
+@router.get('')
+async def get_optionals_with_id_days(id_group:str, id_days:str, db:Session = Depends(get_db)):
+    optional_purchases_data = await optional_purchase_service.get_optionals_with_id_days(id_group=id_group, id_days=id_days, db=db)
+    if not optional_purchases_data:
+        raise HTTPException(status_code=404, detail="No optional purchases found")
+    response = {
+            "status": "success",
+            "optionals": optional_purchases_data
+            }
+    return response
+
+
+@router.get('/clients_optionals')
+async def get_clients_optionals(group_id:str, id_days:str, client_id:str, db:Session = Depends(get_db)):
+    optionals = await optional_purchase_service.get_client_optionals(db=db, group_id=group_id, id_days=id_days, client_id=client_id)
+    if not optionals:
+        raise HTTPException(status_code=404, detail="No optional purchases found for this client")
+    response = {
+            "status": "success",
+            "optionals": optionals
+            }
+    return response

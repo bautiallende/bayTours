@@ -174,12 +174,14 @@ class GroupsHandler(BaseHandler):
                 }   
         
         elif table == 'opcionales':
-            table_data, itinerary  = await client_group_functions.get_grouped_client_data(db=db, id_group=id_group) 
-            responde = {
-                "group_data":group_data, 
-                'table_data':table_data,
-                'itinerary':itinerary
-                }   
+            responde  = await client_group_functions.get_grouped_client_data(db=db, id_group=id_group) 
+            
+            responde['group_data'] = group_data
+            print(f'\nresponde: {responde}')
+            #responde = {
+            #    "group_data":group_data, 
+            #    'table_data':table_data,
+            #    'itinerary':itinerary}   
 
         elif table == '':
             pass
