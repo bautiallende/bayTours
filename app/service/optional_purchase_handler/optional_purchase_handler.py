@@ -56,7 +56,7 @@ class OptionalPurchaseHandler(BaseHandler):
                 'total': price,
                 'purchase_date': datetime.now(),
                 'updated_purchase_date':datetime.now(),
-                'place_of_purchase':'MEX',
+                'place_of_purchase':'before_trip',
                 'source':'Rooming List',
                 'payment_method':'Cash'                    
             })

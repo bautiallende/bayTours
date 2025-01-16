@@ -159,7 +159,7 @@ class GroupsHandler(BaseHandler):
         
 
 
-    async def get_group_data(self, db:AsyncSession, id_group:str, table:str):
+    async def get_group_data(self, db:AsyncSession, id_group:str, table:str, filters:dict|None):
         group_data = (await group_functions.get_tabla_group(db=db, id_grupo=id_group))[0]
 
         responde = {}
@@ -174,7 +174,7 @@ class GroupsHandler(BaseHandler):
                 }   
         
         elif table == 'opcionales':
-            responde  = await client_group_functions.get_grouped_client_data(db=db, id_group=id_group) 
+            responde  = await client_group_functions.get_grouped_client_data(db=db, id_group=id_group, filters=filters) 
             
             responde['group_data'] = group_data
             print(f'\nresponde: {responde}')

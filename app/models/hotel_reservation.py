@@ -5,10 +5,13 @@ class HotelReservation(Base):
     __tablename__ = "hotel_reservation"
 
     id  = Column(String(255), primary_key=True)
-    id_days = Column(String(255))
     id_hotel = Column(Integer)
-    date = Column(Date)
-    time = Column(Time)
+    id_group = Column(String(255))
+    start_date = Column(Date)
+    end_date = Column(Date)
+    PAX = Column(Integer)
     comment = Column(String(255))
-    PAX =  Column(Integer)
+    created_at = Column(DateTime)
+    created_by = Column(String(255))
+        
 

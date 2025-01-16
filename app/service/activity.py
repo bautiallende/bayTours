@@ -14,3 +14,8 @@ async def create(db:AsyncSession, activity_data: Activity):
 async def get_by_group_id(db:AsyncSession, id_group:str, id_optional:int=None):
     request = await activity_functions.get_by_group_id(db=db, id_group=id_group, id_optional=id_optional)
     return request
+
+
+async def get_filters_by_group_id(db:AsyncSession, id_group:str, id_optional:int=None):
+    request = await activity_functions.get_filters_by_group_id(db=db, id_group=id_group, id_optional=id_optional)
+    return request

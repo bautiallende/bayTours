@@ -1,5 +1,6 @@
 // Codigo para manejo de las filas en la tabla de opcionales 
 document.addEventListener("DOMContentLoaded", function() {
+    let assignedOptionalsGlobal = [];
     const rows = document.querySelectorAll("tr.clickable");
     rows.forEach(function(row) {
         const clientIndex = row.getAttribute('data-bs-target').replace('.details-', '');
@@ -64,9 +65,9 @@ document.addEventListener("DOMContentLoaded", function() {
             const city = this.getAttribute('data-city');
             const cityDays = JSON.parse(this.getAttribute('data-city-days'));
 
-
+            console.log('el idGroup en .add-optional :', idGroup);
             // Abrir el modal y cargar los opcionales
-            openAddOptionalModal(clientId, groupId, city, cityDays, clientName);
+            openAddOptionalModal(clientId, idGroup, city, cityDays, clientName, []);
         });
     });
 
@@ -83,7 +84,9 @@ document.addEventListener("DOMContentLoaded", function() {
             const clientName = this.getAttribute('data-client-name');
             const city = this.getAttribute('data-city');
             const cityDays = JSON.parse(this.getAttribute('data-city-days'));
+            const groupId = document.getElementById('modalGroupId').value; 
             
+            console.log('el idGroup en .edit-optional :', idGroup);
 
             // Abrir el modal de opciones
             openOptionModal(clientId, dayId, clientName, idGroup, city, cityDays);
@@ -98,8 +101,30 @@ document.addEventListener("DOMContentLoaded", function() {
         // Configurar los botones en el modal
         document.getElementById('optionAdd').onclick = function() {
             optionModal.hide();
-            // Reutilizar la función para agregar opcionales
-            openAddOptionalModal(clientId, groupId, city, cityDays, clientName);
+            console.log('Apreto el boton de agregar del modal:', groupId);
+            console.log('Apreto el boton de agregar del modal clientId:', clientId);
+            let assignedOptionals = [];
+
+            // Antes de abrir el addOptionalModal, obtenemos las opcionales asignadas
+            fetch(`http://127.0.0.1:8000/optionals_purchase/clients_optionals?client_id=${encodeURIComponent(clientId)}&id_days=${encodeURIComponent(dayId)}&group_id=${encodeURIComponent(groupId)}`)
+                .then(response => response.json())
+                .then(data => {
+                    
+                    if (data.status === 'success' && data.optionals && data.optionals.length > 0) {
+                        assignedOptionals = data.optionals.map(o => String(o.id_optionals));
+                    } else {
+                        assignedOptionals = [];
+                    }
+        
+                    // Ahora tenemos assignedOptionals aunque no hayamos pasado por la edición detallada
+                    console.log("optionAdd clicked in optionModal, assignedOptionals:", assignedOptionals);
+                    openAddOptionalModal(clientId, groupId, city, cityDays, clientName, assignedOptionals);
+                })
+                .catch(error => {
+                    console.error('Error al obtener las opcionales asignadas:', error);
+                    // Si hay error, llamamos con assignedOptionals = [] igualmente
+                    openAddOptionalModal(clientId, groupId, city, cityDays, clientName, []);
+                });
         };
     
         document.getElementById('optionEdit').onclick = function() {
@@ -112,88 +137,102 @@ document.addEventListener("DOMContentLoaded", function() {
     
         document.getElementById('optionDelete').onclick = function() {
             optionModal.hide();
-            // Llamar a la función para eliminar opcionales
-            openDeleteOptionalModal(clientId, dayId, clientName, groupId);
+            openDeleteOptionalModalFlow(clientId, dayId, clientName, groupId, city, cityDays);
         };
     }
 
 
 
     // Función para abrir el modal de "Agregar Opcionales"
-    function openAddOptionalModal(clientId, groupId, city, cityDays, clientName) {
-
+    function openAddOptionalModal(clientId, groupId, city, cityDays, clientName, assignedOptionals = []) {
         // Establecer los valores en los campos ocultos
-        document.getElementById('modalClientId').value = clientId;
-        document.getElementById('modalGroupId').value = groupId;
-
-        
+        const modalClientId = document.getElementById('modalClientId');
+        const modalGroupId = document.getElementById('modalGroupId');
+        if (modalClientId) modalClientId.value = clientId;
+        if (modalGroupId) modalGroupId.value = groupId;
+    
         // Actualizar el título del modal
-        document.querySelector('#addOptionalModal .modal-title').innerHTML = `
-            Agregar opcionales para: <span style= "text-decoration: underline;">${city}</span>, Cliente: <span style= "text-decoration: underline;">${clientName}</span>
-        `;
-
+        const addOptionalModalTitle = document.querySelector('#addOptionalModal .modal-title');
+        if (addOptionalModalTitle) {
+            addOptionalModalTitle.innerHTML = `
+                Agregar opcionales para: <span style="text-decoration: underline;">${city}</span>, Cliente: <span style="text-decoration: underline;">${clientName}</span>
+            `;
+        }
+    
         // Generar botones para cada día
         const dayButtonsContainer = document.getElementById('dayButtons');
-        dayButtonsContainer.innerHTML = '';
-
-        cityDays.forEach(function(day, index) {
-            const dayButton = document.createElement('button');
-            dayButton.type = 'button';
-            dayButton.classList.add('btn', 'btn-outline-primary');
-            dayButton.innerText = day.date;
-            dayButton.setAttribute('data-day-id', day.id);
-            dayButton.addEventListener('click', function() {
-
-                // Marcar el botón como activo
-                document.querySelectorAll('#dayButtons .btn').forEach(btn => btn.classList.remove('active'));
-                dayButton.classList.add('active');
-
-                // Cargar los opcionales para este día
-                loadOptionalsForDay(clientId, groupId, day.id);
-                document.getElementById('modalDayId').value = day.id;
+        if (dayButtonsContainer) {
+            dayButtonsContainer.innerHTML = '';
+    
+            cityDays.forEach(function(day, index) {
+                const dayButton = document.createElement('button');
+                dayButton.type = 'button';
+                dayButton.classList.add('btn', 'btn-outline-primary');
+                dayButton.innerText = day.date;
+                dayButton.setAttribute('data-day-id', day.id);
+                dayButton.addEventListener('click', function() {
+                    document.querySelectorAll('#dayButtons .btn').forEach(btn => btn.classList.remove('active'));
+                    dayButton.classList.add('active');
+                    loadOptionalsForDay(clientId, groupId, day.id, assignedOptionals);
+    
+                    const modalDayId = document.getElementById('modalDayId');
+                    if (modalDayId) modalDayId.value = day.id;
+                });
+    
+                if (index === 0) {
+                    dayButton.classList.add('active');
+                    loadOptionalsForDay(clientId, groupId, day.id, assignedOptionals);
+    
+                    const modalDayId = document.getElementById('modalDayId');
+                    if (modalDayId) modalDayId.value = day.id;
+                }
+                dayButtonsContainer.appendChild(dayButton);
             });
-
-            // Seleccionar el primer día por defecto
-            if (index === 0) {
-                dayButton.classList.add('active');
-                loadOptionalsForDay(clientId, groupId, day.id);
-            }
-            dayButtonsContainer.appendChild(dayButton);
-            //document.getElementById('modalDayId').value = day.id;
-        });
-
-        // Mostrar el modal
+        }
+    
         const addOptionalModal = new bootstrap.Modal(document.getElementById('addOptionalModal'));
         addOptionalModal.show();
+    
+      
+    
+        // Función para actualizar el total
+        function updateTotal() {
+            const priceInputEl = document.getElementById('priceInput');
+            const discountInputEl = document.getElementById('discountInput');
+            const totalDisplayEl = document.getElementById('totalDisplay');
+    
+            const price = priceInputEl ? parseFloat(priceInputEl.value) || 0 : 0;
+            const discount = discountInputEl ? parseFloat(discountInputEl.value) || 0 : 0;
+            if (totalDisplayEl) {
+                const total = price - (price * (discount / 100));
+                totalDisplayEl.value = total.toFixed(2) + ' €';
+            }
+        }
+    
+        // Verificar la existencia de los elementos antes de agregar listeners
+        const priceInputEl = document.getElementById('priceInput');
+        const discountInputEl = document.getElementById('discountInput');
+        const discountValueEl = document.getElementById('discountValue');
+    
+        if (priceInputEl && discountInputEl && discountValueEl) {
+            priceInputEl.addEventListener('input', updateTotal);
+            discountInputEl.addEventListener('input', updateTotal);
+            discountInputEl.addEventListener('input', function() {
+                discountValueEl.innerText = discountInputEl.value + '%';
+                updateTotal();
+            });
+        }
     }
 
 
-    function getClientAge(clientId) {
-        return clientAges[clientId];
+  // Función para obtener la edad de un cliente
+  function getClientAge(clientId) {
+    return clientAges[clientId];
     }
-
-    function updateTotal() {
-        const price = parseFloat(document.getElementById('priceInput').value) || 0;
-        const discount = parseFloat(document.getElementById('discountInput').value) || 0;
-        const total = price - (price * (discount / 100));
-        document.getElementById('totalDisplay').value = total.toFixed(2) + ' €';
-    }
-
-    document.getElementById('priceInput').addEventListener('input', updateTotal);
-    document.getElementById('discountInput').addEventListener('input', updateTotal);
-    const discountInput = document.getElementById('discountInput');
-    const discountValue = document.getElementById('discountValue');
-    discountInput.addEventListener('input', function() {
-        discountValue.innerText = discountInput.value + '%';
-        updateTotal();
-    });
-
-
-
 
     // **Añadir la función loadOptionalsForDay**
 
-    function loadOptionalsForDay(clientId, groupId, dayId) {
+    function loadOptionalsForDay(clientId, groupId, dayId, assignedOptionals = []) {
         // Limpiar el contenedor de opcionales
         const optionalList = document.getElementById('optionalList');
         optionalList.innerHTML = '<p>Cargando opcionales...</p>';
@@ -208,7 +247,22 @@ document.addEventListener("DOMContentLoaded", function() {
         fetch(`http://127.0.0.1:8000/optionals_purchase?id_group=${encodeURIComponent(groupId)}&id_days=${encodeURIComponent(dayId)}`)
             .then(response => response.json())
             .then(data => {
-                const validOptionals = data.optionals.filter(optional => optional.id_optional && optional.name);
+                let validOptionals = data.optionals.filter(optional => optional.id_optional && optional.name);
+                
+                console.log('validOptionals antes de el if', validOptionals);
+                console.log('assignedOptionals antes de el if', assignedOptionals);
+                // Excluir opcionales ya asignadas
+                if (assignedOptionals.length > 0) {
+                    assignedOptionals = assignedOptionals.map(a => a.toString().trim());
+                    validOptionals = validOptionals.filter(o => {
+                        const optionalIdStr = o.id_optional.toString().trim();
+                        return !assignedOptionals.includes(optionalIdStr);
+                    });
+                    console.log('validOptionals DESPUES del filtrado', validOptionals);
+                }
+
+                console.log('validOptionals después del if', validOptionals);
+
 
                 if (validOptionals.length > 0) {
                     optionalList.innerHTML = '';
@@ -312,32 +366,35 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
     function openEditOptionalModal(clientId, dayId, clientName, groupId, city, cityDays) {
-        // Mostrar el modal de opciones (optionModal) ya esta funcionando, ahora en editar necesitamos similar a agregar
-        // Cargamos un modal similar a addOptionalModal pero para edición.
-        const optionModal = new bootstrap.Modal(document.getElementById('optionModal'));
+        const optionModal = bootstrap.Modal.getInstance(document.getElementById('optionModal'));
         optionModal.hide();
-
-        // En edición, necesitamos mostrar las fechas y luego cargar los opcionales existentes
+    
         const editOptionalModal = new bootstrap.Modal(document.getElementById('editOptionalModal'));
         editOptionalModal.show();
-
-        // Llenar campos ocultos
+    
         document.getElementById('editClientId').value = clientId;
         document.getElementById('editGroupId').value = groupId;
-
+    
         const editDayButtonsContainer = document.getElementById('editDayButtons');
         editDayButtonsContainer.innerHTML = '';
-
         const editOptionalList = document.getElementById('editOptionalList');
-
-        // Función para cargar opcionales existentes del cliente para un día
+    
+        let assignedOptionals = []; // Variable para almacenar opcionales ya asignadas
+    
         function loadClientOptionalsForDay(clientId, groupId, dayId) {
             editOptionalList.innerHTML = '<p>Cargando opcionales del cliente...</p>';
-
+    
             fetch(`http://127.0.0.1:8000/optionals_purchase/clients_optionals?client_id=${encodeURIComponent(clientId)}&id_days=${encodeURIComponent(dayId)}&group_id=${encodeURIComponent(groupId)}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success' && data.optionals && data.optionals.length > 0) {
+                        // Tenemos opcionales asignadas
+                        assignedOptionals = data.optionals.map(o => o.id_optionals);
+                        assignedOptionalsGlobal = assignedOptionals.slice();
+
+                        console.log('entro en el loadClientOptionalsForDay y la varaiable assignedOptionalsGlobal es: ', assignedOptionalsGlobal)
+                        console.log('entro en el loadClientOptionalsForDay y la varaiable assignedOptionals es: ', assignedOptionals) 
+
                         editOptionalList.innerHTML = '';
                         const row = document.createElement('div');
                         row.classList.add('row', 'gy-3', 'justify-content-center');
@@ -528,17 +585,22 @@ document.addEventListener("DOMContentLoaded", function() {
                         editOptionalList.innerHTML = '';
                         editOptionalList.appendChild(row);
                     } else {
+                        // No hay opcionales para este día
+                        assignedOptionals = []; // Sin opcionales asignadas
+                        assignedOptionalsGlobal = [];
+    
                         editOptionalList.innerHTML = '<p>No hay opcionales para este día.</p>';
-                        // Agregar un botón "Agregar" aquí, por ejemplo:
                         const addButton = document.createElement('button');
                         addButton.type = 'button';
                         addButton.classList.add('btn', 'btn-success', 'mt-3');
                         addButton.innerText = 'Agregar';
                         addButton.addEventListener('click', function() {
-                            // Abrir el modal de agregar opcionales
-                            // Para ello necesitamos groupId, city y cityDays
-                            // Podemos guardarlos al llamar openEditOptionalModal
-                            openAddOptionalModal(clientId, groupId, city, cityDays, clientName);
+                            // Cerrar el editOptionalModal antes de abrir el addOptionalModal
+                            const editOptionalModalInstance = bootstrap.Modal.getInstance(document.getElementById('editOptionalModal'));
+                            editOptionalModalInstance.hide();
+    
+                            // Pasar assignedOptionals (que está vacío en este caso) a openAddOptionalModal
+                            openAddOptionalModal(clientId, groupId, city, cityDays, clientName, assignedOptionals);
                         });
                         editOptionalList.appendChild(addButton);
                     }
@@ -548,8 +610,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     editOptionalList.innerHTML = '<p>Error al cargar los datos para editar.</p>';
                 });
         }
-
-
+    
         cityDays.forEach(function(day, index) {
             const dayButton = document.createElement('button');
             dayButton.type = 'button';
@@ -562,22 +623,24 @@ document.addEventListener("DOMContentLoaded", function() {
                 document.getElementById('editDayId').value = day.id;
                 loadClientOptionalsForDay(clientId, groupId, day.id);
             });
-
+    
             if (index === 0) {
                 dayButton.classList.add('active');
                 document.getElementById('editDayId').value = day.id;
                 loadClientOptionalsForDay(clientId, groupId, day.id);
             }
-
+    
             editDayButtonsContainer.appendChild(dayButton);
         });
-
-        
     
-        // Configurar el botón de guardar cambios
+        // Guardar cambios
         document.getElementById('saveEditOptionalBtn').onclick = function() {
-            // Recolectar los datos de todos los formularios y enviar las solicitudes
+
+            const editOptionalModal = bootstrap.Modal.getInstance(document.getElementById('editOptionalModal'));
             const forms = document.querySelectorAll('.edit-optional-form');
+            let requests = [];
+
+            // Recolectar los datos de todos los formularios y enviar las solicitudes
             forms.forEach(function(form) {
                 const formData = new FormData(form);
                 formData.append('client_id', clientId);
@@ -630,106 +693,236 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
     // Manejar clic en el botón "Guardar" del modal
-    document.getElementById('saveOptionalBtn').addEventListener('click', function() {
-        // Obtener los datos del formulario
-        const form = document.getElementById('addOptionalForm');
-        const formData = new FormData(form);
-    
-        // Obtener 'id_activity' y 'id_optionals' del radio button seleccionado
-        const selectedRadio = document.querySelector('input[name="id_activity"]:checked');
-        if (!selectedRadio) {
-            alert('Por favor, seleccione una actividad opcional.');
-            return;
-        }
-        const id_activity = selectedRadio.value;
-        const id_optionals = selectedRadio.getAttribute('data-id-optional');
-    
-        // Añadir 'id_activity' y 'id_optionals' a formData
-        formData.append('id_activity', id_activity);
-        formData.append('id_optionals', id_optionals);
-    
-        // Añadir 'source'
-        formData.append('source', 'admin');
-
-        const data = {};
-        formData.forEach((value, key) => {
-            if (key === 'price') {
-                data[key] = parseFloat(value); // Convertir a número
-            } else if (key === 'discount') {
-                data[key] = value.toString(); // Asegurar que sea una cadena
-            } else {
-                data[key] = value; // Mantener otros valores como están
-            }
-        });
+    const saveOptionalBtn = document.getElementById('saveOptionalBtn');
+    if (saveOptionalBtn) {
+        saveOptionalBtn.addEventListener('click', function() {
+            // Obtener los datos del formulario
+            const form = document.getElementById('addOptionalForm');
+            const formData = new FormData(form);
         
-        console.log('Datos enviados:', JSON.stringify(data));
-        // Realizar la solicitud para agregar los opcionales al cliente
-        fetch('http://127.0.0.1:8000/optionals_purchase', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        })
-        .then(response => {
-            if (response.ok) {
-                // Cerrar el modal y actualizar la tabla
-                const addOptionalModal = bootstrap.Modal.getInstance(document.getElementById('addOptionalModal'));
-                addOptionalModal.hide();
-    
-                // Opcionalmente, actualizar la tabla en la página
-                location.reload();
-            } else {
-                return response.json().then(data => {
-                    // Manejar errores
-                    alert('Error al guardar los opcionales: ' + (data.message || 'Error desconocido'));
-                });
+            // Obtener 'id_activity' y 'id_optionals' del radio button seleccionado
+            const selectedRadio = document.querySelector('input[name="id_activity"]:checked');
+            if (!selectedRadio) {
+                alert('Por favor, seleccione una actividad opcional.');
+                return;
             }
-        })
-        .catch(error => {
-            console.error('Error al guardar los opcionales:', error);
-            alert('Error al guardar los opcionales.');
-        });
-    });
-
-    function openDeleteOptionalModal(clientId, activityId, clientName, groupId) {
-        // Mostrar el nombre del cliente en el modal
-        document.getElementById('deleteClientName').innerText = clientName;
+            const id_activity = selectedRadio.value;
+            const id_optionals = selectedRadio.getAttribute('data-id-optional');
         
-    
-        // Mostrar el modal de confirmación
-        const deleteOptionalModal = new bootstrap.Modal(document.getElementById('deleteOptionalModal'));
-        deleteOptionalModal.show();
-    
-        // Configurar el evento para confirmar la eliminación
-        document.getElementById('confirmDeleteOptionalBtn').onclick = function() {
-            // Realizar la solicitud para eliminar los opcionales
+            // Añadir 'id_activity' y 'id_optionals' a formData
+            formData.append('id_activity', id_activity);
+            formData.append('id_optionals', id_optionals);
+        
+            // Añadir 'source'
+            formData.append('source', 'admin');
+
+            const data = {};
+            formData.forEach((value, key) => {
+                if (key === 'price') {
+                    data[key] = parseFloat(value); // Convertir a número
+                } else if (key === 'discount') {
+                    data[key] = value.toString(); // Asegurar que sea una cadena
+                } else {
+                    data[key] = value; // Mantener otros valores como están
+                }
+            });
+            
+            console.log('Datos enviados:', JSON.stringify(data));
+            // Realizar la solicitud para agregar los opcionales al cliente
             fetch('http://127.0.0.1:8000/optionals_purchase', {
-                method: 'DELETE',
+                method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    client_id: clientId,
-                    id_group: groupId,
-                    id_activity: activityId,
-                })
+                body: JSON.stringify(data),
             })
             .then(response => {
                 if (response.ok) {
                     // Cerrar el modal y actualizar la tabla
-                    deleteOptionalModal.hide();
+                    const addOptionalModal = bootstrap.Modal.getInstance(document.getElementById('addOptionalModal'));
+                    addOptionalModal.hide();
+        
+                    // Opcionalmente, actualizar la tabla en la página
                     location.reload();
                 } else {
                     return response.json().then(data => {
-                        alert('Error al eliminar el opcional: ' + (data.message || 'Error desconocido'));
+                        // Manejar errores
+                        alert('Error al guardar los opcionales: ' + (data.message || 'Error desconocido'));
                     });
                 }
             })
             .catch(error => {
-                console.error('Error al eliminar el opcional:', error);
-                alert('Error al eliminar el opcional.');
+                console.error('Error al guardar los opcionales:', error);
+                alert('Error al guardar los opcionales.');
             });
+        });
+    }
+
+    // Nueva función para el flujo de borrado
+    function openDeleteOptionalModalFlow(clientId, dayId, clientName, groupId, city, cityDays) {
+        const deleteOptionalFlowModal = new bootstrap.Modal(document.getElementById('deleteOptionalFlowModal'));
+        deleteOptionalFlowModal.show();
+
+        document.getElementById('deleteClientId').value = clientId;
+        document.getElementById('deleteGroupId').value = groupId;
+
+        const deleteDayButtonsContainer = document.getElementById('deleteDayButtons');
+        deleteDayButtonsContainer.innerHTML = '';
+        const deleteOptionalList = document.getElementById('deleteOptionalList');
+
+        let deleteAssignedOptionals = []; // Para almacenar opcionales asignadas
+
+        function loadClientOptionalsForDeleteDay(clientId, groupId, dayId) {
+            deleteOptionalList.innerHTML = '<p>Cargando opcionales del cliente...</p>';
+
+            fetch(`http://127.0.0.1:8000/optionals_purchase/clients_optionals?client_id=${encodeURIComponent(clientId)}&id_days=${encodeURIComponent(dayId)}&group_id=${encodeURIComponent(groupId)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success' && data.optionals && data.optionals.length > 0) {
+                        deleteAssignedOptionals = data.optionals; 
+
+                        deleteOptionalList.innerHTML = '';
+                        const row = document.createElement('div');
+                        row.classList.add('row', 'gy-3', 'justify-content-center');
+
+                        data.optionals.forEach(function(optional) {
+                            const col = document.createElement('div');
+                            col.classList.add('col-md-6', 'col-lg-4', 'd-flex', 'align-items-stretch');
+
+                            const card = document.createElement('div');
+                            card.classList.add('card', 'h-100');
+
+                            const cardBody = document.createElement('div');
+                            cardBody.classList.add('card-body', 'd-flex', 'flex-column');
+
+                            const cardTitle = document.createElement('h5');
+                            cardTitle.classList.add('card-title');
+                            cardTitle.innerText = optional.optional_name;
+
+                            const formCheck = document.createElement('div');
+                            formCheck.classList.add('form-check', 'mt-auto');
+
+                            const radio = document.createElement('input');
+                            radio.classList.add('form-check-input');
+                            radio.type = 'radio';
+                            radio.name = 'delete_id_optionals';
+                            radio.value = optional.id_optionals;
+                            radio.setAttribute('data-optional-name', optional.optional_name);
+                            radio.activity = optional.id_activity;
+                            radio.style.marginRight = '10px';
+
+                            const label = document.createElement('label');
+                            label.classList.add('form-check-label');
+                            label.innerText = 'Seleccionar';
+
+                            radio.addEventListener('change', function() {
+                                document.getElementById('proceedDeleteBtn').disabled = false;
+                                document.getElementById('deleteSelectedOptionalId').value = radio.value;
+                                document.getElementById('deleteSelectedOptionalName').value = radio.getAttribute('data-optional-name');
+                                document.getElementById('deleteSelectedActivityId').value = radio.activity;
+                            });
+
+                            formCheck.appendChild(radio);
+                            formCheck.appendChild(label);
+
+                            cardBody.appendChild(cardTitle);
+                            cardBody.appendChild(formCheck);
+                            card.appendChild(cardBody);
+                            col.appendChild(card);
+                            row.appendChild(col);
+                        });
+
+                        deleteOptionalList.innerHTML = '';
+                        deleteOptionalList.appendChild(row);
+                        document.getElementById('proceedDeleteBtn').disabled = true;
+                    } else {
+                        deleteOptionalList.innerHTML = '<p>No hay opcionales para este día.</p>';
+                        document.getElementById('proceedDeleteBtn').disabled = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al obtener los opcionales del cliente:', error);
+                    deleteOptionalList.innerHTML = '<p>Error al cargar los datos para borrar.</p>';
+                    document.getElementById('proceedDeleteBtn').disabled = true;
+                });
+        }
+
+        cityDays.forEach(function(day, index) {
+            const dayButton = document.createElement('button');
+            dayButton.type = 'button';
+            dayButton.classList.add('btn', 'btn-outline-primary');
+            dayButton.innerText = day.date;
+            dayButton.setAttribute('data-day-id', day.id);
+            dayButton.addEventListener('click', function() {
+                document.querySelectorAll('#deleteDayButtons .btn').forEach(btn => btn.classList.remove('active'));
+                dayButton.classList.add('active');
+                document.getElementById('deleteDayId').value = day.id;
+                loadClientOptionalsForDeleteDay(clientId, groupId, day.id);
+            });
+
+            if (index === 0) {
+                dayButton.classList.add('active');
+                document.getElementById('deleteDayId').value = day.id;
+                loadClientOptionalsForDeleteDay(clientId, groupId, day.id);
+            }
+
+            deleteDayButtonsContainer.appendChild(dayButton);
+        });
+
+        // Al hacer clic en "Borrar" en el modal de flujo de borrado
+        document.getElementById('proceedDeleteBtn').onclick = function() {
+            // Abrir el modal de confirmación
+            const deleteConfirmModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+            deleteConfirmModal.show();
+
+            const optionalName = document.getElementById('deleteSelectedOptionalName').value;
+            document.getElementById('toDeleteOptionalNameDisplay').innerText = optionalName;
+            document.getElementById('toDeleteOptionalNameCode').innerText = optionalName;
+
+            const deleteConfirmInput = document.getElementById('deleteConfirmInput');
+            const confirmDeleteFinalBtn = document.getElementById('confirmDeleteFinalBtn');
+
+            deleteConfirmInput.value = '';
+            confirmDeleteFinalBtn.disabled = true;
+
+            deleteConfirmInput.addEventListener('input', function() {
+                const expected = `borrar ${optionalName}`;
+                if (deleteConfirmInput.value.trim() === expected) {
+                    confirmDeleteFinalBtn.disabled = false;
+                } else {
+                    confirmDeleteFinalBtn.disabled = true;
+                }
+            });
+
+            confirmDeleteFinalBtn.onclick = function() {
+                // Realizar la solicitud DELETE
+                const activitylId = document.getElementById('deleteSelectedActivityId').value;
+                const deleteClientId = document.getElementById('deleteClientId').value;
+                const deleteGroupId = document.getElementById('deleteGroupId').value;
+                const deleteDayId = document.getElementById('deleteDayId').value;
+
+                fetch(`http://127.0.0.1:8000/optionals_purchase?id_group=${encodeURIComponent(deleteGroupId)}&client_id=${encodeURIComponent(deleteClientId)}&id_activity=${encodeURIComponent(activitylId)}`, {
+                    method: 'DELETE'
+                    
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Cerrar modales y recargar
+                        const deleteOptionalFlowModalInstance = bootstrap.Modal.getInstance(document.getElementById('deleteOptionalFlowModal'));
+                        deleteOptionalFlowModalInstance.hide();
+                        deleteConfirmModal.hide();
+                        location.reload();
+                    } else {
+                        return response.json().then(data => {
+                            alert('Error al eliminar el opcional: ' + (data.message || 'Error desconocido'));
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al eliminar el opcional:', error);
+                    alert('Error al eliminar el opcional.');
+                });
+            };
         };
     }
 });
@@ -786,6 +979,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const editGuideForm = document.getElementById('editGuideForm');
     const guideSelect = document.getElementById('guideSelect');
     const guideNameSpan = document.getElementById('guideName');
+    const startingDate = document.getElementById('fechaInicio').innerText;
+    const endingDate = document.getElementById('fechaRegreso').innerText;
+
+    console.log('startingDate es la siguiente: ', startingDate.toString())
+    console.log('endingDate es la siguiente: ', endingDate)
 
     // Al abrir el modal, obtener la lista de guías disponibles
     const editGuideModal = document.getElementById('editGuideModal');
@@ -1248,3 +1446,183 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+
+
+
+document.getElementById('filterModal').addEventListener('show.bs.modal', function () {
+    //const filterPassengers = document.getElementById('filterPassengers');
+    //const filterCity = document.getElementById('filterCity');
+    //const filterActivity = document.getElementById('filterActivity');
+
+    // Limpiar selects
+    ///filterPassengers.innerHTML = '';
+    //filterCity.innerHTML = '<option value="">Todas</option>';
+    //filterActivity.innerHTML = '<option value="">Todas</option>';
+
+    // Cargar pasajeros
+    fetch(`http://127.0.0.1:8000/clients/clents_group?id_group=${encodeURIComponent(idGroup)}`)
+        .then(r => r.json())
+        .then(data => {
+            const passengerMenu = document.getElementById('passengerDropdownMenu');
+            passengerMenu.innerHTML = '';
+    
+            data.forEach(p => {
+                const fullName = [p.first_name, p.second_name, p.paternal_surname, p.mother_surname].filter(Boolean).join(' ');
+    
+                const checkboxId = `passenger_${p.id_clients}`;
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('form-check');
+    
+                const checkbox = document.createElement('input');
+                checkbox.classList.add('form-check-input');
+                checkbox.type = 'checkbox';
+                checkbox.value = p.id_clients;
+                checkbox.id = checkboxId;
+    
+                const label = document.createElement('label');
+                label.classList.add('form-check-label');
+                label.setAttribute('for', checkboxId);
+                label.textContent = fullName;
+    
+                itemDiv.appendChild(checkbox);
+                itemDiv.appendChild(label);
+                passengerMenu.appendChild(itemDiv);
+            });
+        })
+        .catch(e => console.error('Error al cargar pasajeros:', e));
+
+    // Cargar ciudades (con checkboxes)
+    fetch(`http://127.0.0.1:8000/days/get_days_for_filter?id_group=${encodeURIComponent(idGroup)}`)
+        .then(r => r.json())
+        .then(data => {
+            const cityMenu = document.getElementById('cityDropdownMenu');
+            cityMenu.innerHTML = '';
+            data.forEach(cityName => {
+                const cityCheckboxId = `city_${cityName}`;
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('form-check');
+
+                const checkbox = document.createElement('input');
+                checkbox.classList.add('form-check-input');
+                checkbox.type = 'checkbox';
+                checkbox.value = cityName;
+                checkbox.id = cityCheckboxId;
+
+                const label = document.createElement('label');
+                label.classList.add('form-check-label');
+                label.setAttribute('for', cityCheckboxId);
+                label.textContent = cityName;
+
+                itemDiv.appendChild(checkbox);
+                itemDiv.appendChild(label);
+                cityMenu.appendChild(itemDiv);
+            });
+        })
+        .catch(e => console.error('Error al cargar ciudades:', e));
+
+    // Cargar actividades (con checkboxes)
+    fetch(`http://127.0.0.1:8000/activity/activity_by_id_group?id_group=${encodeURIComponent(idGroup)}`)
+        .then(r => r.json())
+        .then(data => {
+            const activityMenu = document.getElementById('activityDropdownMenu');
+            activityMenu.innerHTML = '';
+            data.forEach(a => {
+                if (a.name && a.name.trim() !== '') {
+                    const actCheckboxId = `activity_${a.Activity.id_optional}`;
+                    const itemDiv = document.createElement('div');
+                    itemDiv.classList.add('form-check');
+
+                    const checkbox = document.createElement('input');
+                    checkbox.classList.add('form-check-input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = a.Activity.id_optional;
+                    checkbox.id = actCheckboxId;
+
+                    const label = document.createElement('label');
+                    label.classList.add('form-check-label');
+                    label.setAttribute('for', actCheckboxId);
+                    label.textContent = a.name;
+
+                    itemDiv.appendChild(checkbox);
+                    itemDiv.appendChild(label);
+                    activityMenu.appendChild(itemDiv);
+                }
+            });
+        })
+        .catch(e => console.error('Error al cargar actividades:', e));
+});
+
+document.getElementById('applyFilterBtn').onclick = function() {
+    const passengerMenu = document.getElementById('passengerDropdownMenu');
+    const selectedPassengers = Array.from(passengerMenu.querySelectorAll('input[type="checkbox"]:checked')).map(c => c.value);
+
+    // Ciudades
+    const cityMenu = document.getElementById('cityDropdownMenu');
+    const selectedCities = Array.from(cityMenu.querySelectorAll('input[type="checkbox"]:checked')).map(c => c.value);
+
+    // Actividades
+    const activityMenu = document.getElementById('activityDropdownMenu');
+    const selectedActivities = Array.from(activityMenu.querySelectorAll('input[type="checkbox"]:checked')).map(c => c.value);
+
+    const filterMinAge = document.getElementById('filterMinAge').value;
+    const filterMaxAge = document.getElementById('filterMaxAge').value;
+    const filterSex = document.getElementById('filterSex').value;
+    const filterPlaceOfPurchase = document.getElementById('filterPlaceOfPurchase').value;
+    const filterPaymentMethod = document.getElementById('filterPaymentMethod').value;
+
+    const filterModalInstance = bootstrap.Modal.getInstance(document.getElementById('filterModal'));
+    filterModalInstance.hide();
+
+    let filters = {
+        passengers: (selectedPassengers.length > 0) ? selectedPassengers : null,
+        min_age: filterMinAge ? filterMinAge : null,
+        max_age: filterMaxAge ? filterMaxAge : null,
+        sex: filterSex ? filterSex : null,
+        city: selectedCities ? selectedCities : null,
+        activity_id: selectedActivities ? selectedActivities : null,
+        place_of_purchase: filterPlaceOfPurchase || null,
+        payment_method: filterPaymentMethod || null
+    };
+
+    // Eliminar claves con null
+    Object.keys(filters).forEach(key => {
+        if (filters[key] === null || filters[key] === "" || (Array.isArray(filters[key]) && filters[key].length === 0)) {
+            delete filters[key];
+        }
+    });
+
+    const filtersParam = encodeURIComponent(JSON.stringify(filters));
+
+    console.log("Filters to send:", filters, filtersParam);
+
+    // Suponiendo que tienes id_group y current_table disponibles
+    location.href = `/grupo/${idGroup}?table=${current_table}&filters=${filtersParam}`;
+};
+
+
+function exportarDatos() {
+    const params = {
+        passengers: currentFilters.passengers, 
+        min_age: currentFilters.min_age,
+        max_age: currentFilters.max_age,
+        sex: currentFilters.sex,
+        city_id: currentFilters.city_id,
+        activity_id: currentFilters.activity_id
+    };
+
+    fetch('/export_opcionales_to_google_sheets', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(params)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            window.open(data.sheet_url, '_blank');
+        } else {
+            alert('Error al exportar datos a Google Sheets.');
+        }
+    })
+    .catch(e => console.error('Error al exportar datos:', e));
+}

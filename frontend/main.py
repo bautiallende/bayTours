@@ -210,13 +210,24 @@ async def oauth2callback(request: Request):
 
 
 @app.get("/grupo/{id_group}", response_class=HTMLResponse)
-async def grupo_detalle(request: Request, id_group: str, table: str = "clientes"):
+async def grupo_detalle(request: Request, id_group: str, table: str = "clientes", filters: str = None):
+    import json
     print(f'\n\n BUSCANDO GRUPO... \n\n')
     backend_url = "http://127.0.0.1:8000/groups/group_data"
 
+    # Si filters no es None, intentar cargarlo como JSON
+    filters_dict = None
+    if filters:
+        filters_dict = json.loads(filters)
+    
+    filters_str = json.dumps(filters_dict) if filters_dict is not None else None
+
+    print(f"\n filters: {filters_str}\n")
+
     params = {
         "id_group": id_group,
-        "table": table
+        "table": table, 
+        "filters":filters_str
     }
 
     try:
@@ -546,5 +557,7 @@ async def update_qr(id_group: str, request: Request, data: dict = Body(...)):
         return JSONResponse(content={"status": "error", "message": "Error al actualizar el estado del QR"}, status_code=500)
 
 
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8001)
+

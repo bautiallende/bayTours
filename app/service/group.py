@@ -66,9 +66,9 @@ async def get_group_filters(db: AsyncSession):
     return result
 
 
-async def get_group_data(db: AsyncSession, id_group: str, table:str):
+async def get_group_data(db: AsyncSession, id_group: str, table:str, filters:dict|None):
     handler = groups_handlers.get('group_data')
     
-    request = await handler(db=db, id_group=id_group, table=table)
+    request = await handler(db=db, id_group=id_group, table=table, filters=filters)
 
     return request

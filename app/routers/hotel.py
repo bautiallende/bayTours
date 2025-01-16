@@ -15,3 +15,4 @@ async def get_group(hotel_data: hotels.HotelBase, db: Session = Depends(get_db))
     if response is None:
         raise HTTPException(status_code=404, detail="Hotel not created")
     return response
+

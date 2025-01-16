@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.schemas import group
 from ..dependencies import get_db
+import json
 from app.service import group as group_service
 from app.service import operations as operations_service
 from app.service import assistant as assistant_service
@@ -148,9 +149,12 @@ async def groups_filter_options(db: Session = Depends(get_db)):
 
 
 @router.get('/group_data')
-async def group_data(id_group:str , table:str, db: Session = Depends(get_db)):
-    print(f'Entrada por el endpoint group_data con los parametros: id_group {id_group}, y table: {table} ')
-    group_data = await group_service.get_group_data(db=db, id_group=id_group, table=table)
+async def group_data(id_group:str , table:str, db: Session = Depends(get_db), filters: str = None):
+    filters_dict = None
+    if filters:
+        filters_dict = json.loads(filters)
+    print(f'Entrada por el endpoint group_data con los parametros: id_group {id_group}, y table: {table}, \nfilters:{filters_dict} ')
+    group_data = await group_service.get_group_data(db=db, id_group=id_group, table=table, filters=filters_dict)
     return group_data
 
 

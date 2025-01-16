@@ -1,6 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.days import Days
 from sqlalchemy.future import select
+from sqlalchemy import asc, desc
+
 
 
 async def create(db:AsyncSession, days_data: Days):
@@ -14,3 +16,11 @@ async def get_all(db:AsyncSession, id_group:str):
     result = db.execute(select(Days).where(Days.id_group == id_group))
     days_data = result.scalars().all()
     return days_data
+
+
+
+async def get_dats_for_filter(db:AsyncSession, id_group:str):
+    result = db.execute(
+        select(Days.city).
+        where(Days.id_group == id_group).order_by(Days.city.asc()).group_by(Days.city))
+    return result.scalars().all()

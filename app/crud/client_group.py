@@ -17,10 +17,9 @@ async def create_group(db:AsyncSession, group_data:ClientGroup):
 
 
 
-async def get_grouped_client_data(db: AsyncSession, id_group:str):
+async def get_grouped_client_data(db: AsyncSession, id_group:str, filters: dict = None):
     # Consulta principal que obtiene datos básicos de cliente y opcionales comprados
-    result = db.execute(
-        select(
+    query = select(
             Clients.id_clients,
             Clients.paternal_surname,
             Clients.mother_surname,
@@ -38,16 +37,70 @@ async def get_grouped_client_data(db: AsyncSession, id_group:str):
             OptionalPurchase.source,
             OptionalPurchase.payment_method,
             Days.id
-        )
-        .join(ClientGroup, ClientGroup.id_clients == Clients.id_clients)
-        .join(OptionalPurchase, OptionalPurchase.client_id == Clients.id_clients, isouter=True)
-        .join(Activity, OptionalPurchase.id_activity == Activity.id, isouter=True)
-        .join(Days, Activity.id_days == Days.id, isouter=True)
-        .join(Optionals, OptionalPurchase.id_optionals == Optionals.id_optional, isouter=True)
-        .where(ClientGroup.id_group == id_group)
-    )
+        ).join(
+            ClientGroup, ClientGroup.id_clients == Clients.id_clients).join(
+                OptionalPurchase, OptionalPurchase.client_id == Clients.id_clients, isouter=True
+                ).join(
+                    Activity, OptionalPurchase.id_activity == Activity.id, isouter=True
+                    ).join(
+                        Days, Activity.id_days == Days.id, isouter=True
+                        ).join(
+                            Optionals, OptionalPurchase.id_optionals == Optionals.id_optional, isouter=True
+                            ).where(ClientGroup.id_group == id_group)
+    
 
-    rows = result.fetchall()
+
+    # Aplicar filtros
+    if filters:
+        if "passengers" in filters and filters["passengers"]:
+            query = query.filter(Clients.id_clients.in_(filters["passengers"]))
+        # Filtro por rango de edad
+        if "min_age" in filters and "max_age" in filters:
+            current_year = datetime.now().year
+            min_birth_year = current_year - int(filters["max_age"])  # Edad máxima corresponde al año mínimo
+            max_birth_year = current_year - int(filters["min_age"])  # Edad mínima corresponde al año máximo
+            print(f"{min_birth_year}-01-01", f"{max_birth_year}-12-31")
+            query = query.filter(
+                Clients.birth_date.between(f"{min_birth_year}-01-01", f"{max_birth_year}-12-31")
+            )
+        elif "min_age" in filters:
+            current_year = datetime.now().year
+            max_birth_year = current_year - int(filters["min_age"])
+            print(f"{max_birth_year}-12-31")
+            query = query.filter(Clients.birth_date <= f"{max_birth_year}-12-31")
+        elif "max_age" in filters:
+            current_year = datetime.now().year
+            min_birth_year = current_year - int(filters["max_age"])
+            print(f"{min_birth_year}-01-01")
+            query = query.filter(Clients.birth_date >= f"{min_birth_year}-01-01")
+
+        # Filtro por sexo
+        if "sex" in filters and filters["sex"]:
+            #sex = "M" if filters["sex"].lower() in ["masculino", "m"] else "F"
+            query = query.filter(Clients.sex == filters["sex"])
+
+        # Filtro por ciudad
+        if "city" in filters and filters["city"]:
+            if isinstance(filters["city"], str):
+                filters["city"] = [filters["city"]]  # Convertir a lista si es un string único
+            query = query.filter(Optionals.city.in_(filters["city"]))
+
+        # Filtro por actividades
+        if "activity_id" in filters and filters["activity_id"]:
+            if isinstance(filters["activity_id"], str):
+                filters["activity_id"] = [filters["activity_id"]]
+            query = query.filter(Optionals.id_optional.in_(filters["activity_id"]))
+
+        if "place_of_purchase" in filters and filters["place_of_purchase"]:
+            print(f"Place of purchase: {filters['place_of_purchase']}")
+            query = query.filter(OptionalPurchase.place_of_purchase.ilike(f"%{filters['place_of_purchase']}%"))
+        
+        if "payment_method" in filters and filters["payment_method"]:
+            print(f"Payment method: {filters['payment_method']}")
+            query = query.filter(OptionalPurchase.payment_method.ilike(f"%{filters['payment_method']}%"))
+
+
+    rows = db.execute(query).fetchall()
 
     # Procesar datos para agrupar opcionales por ciudad y cliente
     clients_data = {}
@@ -138,34 +191,6 @@ async def get_grouped_client_data(db: AsyncSession, id_group:str):
             "city": current_city,
             "days": city_days
         })
-
-
-
-    # for row in days_rows:
-    #     if row.city != current_city:
-    #         # Añadir la ciudad previa al itinerario si ya tenemos datos
-    #         if current_city is not None:
-    #             itinerary.append({
-    #                 "city": current_city,
-    #                 "start_date": start_date.strftime("%d-%m-%Y"),
-    #                 "end_date": end_date.strftime("%d-%m-%Y") 
-    #             })
-    #         # Resetear para la nueva ciudad
-    #         current_city = row.city
-    #         start_date = row.date
-    #         end_date = row.date + timedelta(days=1)
-    #     else:
-    #         # Extender la estadía en la ciudad actual
-    #         end_date = row.date + timedelta(days=1)
-
-    # # Añadir la última ciudad al itinerario
-    # if current_city is not None:
-    #     itinerary.append({
-    #         "city": current_city,
-    #         "start_date": start_date.strftime("%d-%m-%Y"),
-    #         "end_date": end_date.strftime("%d-%m-%Y")
-    #     })
-
     
     #return group_data, itinerary
     return {

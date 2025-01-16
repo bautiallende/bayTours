@@ -28,6 +28,7 @@ async def get_clients(db: Session, paternal_surname: str, first_name:str, passap
 
 async def get_clients_by_group_id(db:AsyncSession, id_group: str):
    query = select(
+      clients_model.Clients.id_clients,
       clients_model.Clients.paternal_surname, 
       clients_model.Clients.mother_surname, 
       clients_model.Clients.first_name,
