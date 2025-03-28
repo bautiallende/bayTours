@@ -1,0 +1,3 @@
+variables:
+  GRAMEX_ADMIN_DEPRECATED:
+    function: gramex.config.app_log.error('Import $GRAMEXAPPS/admin2/ instead of /admin/')

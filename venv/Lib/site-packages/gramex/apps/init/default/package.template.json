@@ -1,0 +1,17 @@
+{
+  "name": "{{ appname }}",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "{{ author }} <{{ email }}>",
+  "license": "ISC",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "eslint": "8",
+    "eslint-plugin-html": "7",
+    "eslint-plugin-template": "0.7"
+  }
+}

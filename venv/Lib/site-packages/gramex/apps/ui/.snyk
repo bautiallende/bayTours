@@ -1,0 +1,32 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.19.0
+ignore:
+
+  # get-google-fonts impacts only the installation of comicgen. No runtime impact.
+  SNYK-JS-REQUEST-3361831:
+    - '*':
+        reason: No fix. Await get-google-fonts upgrade
+        expires: 2030-01-01T00:00:00.000Z
+        created: 2021-07-24T00:00:00.000Z
+
+  # We need D3 v4 for old projects. Just retain this forever -- but newer projects won't use this
+  SNYK-JS-D3COLOR-1076592:
+    - '*':
+        reason: Retained for backward compatibility for old projects
+        expires: 2030-01-01T00:00:00.000Z
+        created: 2021-07-24T00:00:00.000Z
+
+
+  SNYK-JS-INFLIGHT-6095116:
+    - '*':
+        reason: No fix available. Await comicgen > glob upgrade
+        expires: 2024-12-31T00:00:00.000Z
+        created: 2024-03-02T00:00:00.000Z
+
+  SNYK-JS-BRACES-6838727:
+    - '*':
+        reason: No fix available. Await sass/chokidar/braces upgrade
+        expires: 2024-12-31T00:00:00.000Z
+        created: 2024-05-20T00:00:00.000Z
+
+patch: {}
