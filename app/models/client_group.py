@@ -11,3 +11,4 @@ class ClientGroup(Base):
     registration_date = Column(DateTime)
     status = Column(String(255))
     packages = Column(String(255))
+    room_type = Column(String(255))

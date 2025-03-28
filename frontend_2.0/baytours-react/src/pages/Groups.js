@@ -10,25 +10,28 @@ import {
 } from 'react-bootstrap';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 
-
+// URL base para obtener datos y opciones desde el backend
 const backendUrl = `${process.env.REACT_APP_API_URL}/groups/tabla_groups`;
 const optionsUrl = `${process.env.REACT_APP_API_URL}/groups/groups_filter_options`;
 
-
-
+/**
+ * Componente Groups
+ * Muestra una tabla con los grupos, permite ordenar y filtrar datos,
+ * y ofrece funcionalidad para exportar información y redirigir al detalle de un grupo.
+ */
 const Groups = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Estados para datos y carga
+  // Estados para almacenar la información de grupos y opciones de filtro
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  // Estado para ordenamiento
+  
+  // Estados para el ordenamiento
   const [sortBy, setSortBy] = useState('');
   const [order, setOrder] = useState('asc');
 
-  // Estado para filtros
+  // Estado para filtros; se pueden agregar o modificar campos según sea necesario
   const [filters, setFilters] = useState({
     id_grupo: '',
     bus_company: '',
@@ -43,7 +46,7 @@ const Groups = () => {
     current_hotel: '',
   });
 
-  // Opciones de filtro (provenientes del backend)
+  // Opciones de filtro obtenidas del backend
   const [options, setOptions] = useState({
     bus_companies: [],
     guides: [],
@@ -54,23 +57,28 @@ const Groups = () => {
     hotels: [],
   });
 
-  // Estado para mostrar/ocultar el modal de filtros
+  // Estado para controlar la visibilidad del modal de filtros
   const [showModal, setShowModal] = useState(false);
 
-  // Al cargar el componente, leer los parámetros de la URL (si los hay)
+  /**
+   * Al cargar el componente, se leen los parámetros de la URL para establecer
+   * el ordenamiento inicial.
+   */
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const sort = params.get('sort_by') || '';
     const ord = params.get('order') || 'asc';
     setSortBy(sort);
     setOrder(ord);
-    // Aquí también podrías extraer otros filtros si se los pasa en la URL.
+    // Aquí podríamos extraer otros filtros si se pasan por la URL.
   }, [location.search]);
 
-  // Función para obtener los datos de grupos
-  const fetchGroups = async () => {
+  /**
+   * Función para obtener los datos de grupos desde el backend.
+   * Construye los parámetros de consulta a partir de los estados de ordenamiento y filtros.
+   */
+  const fetchGroups = useCallback(async () => {
     setLoading(true);
-    // Construir los parámetros de la consulta
     const params = new URLSearchParams({
       sort_by: sortBy,
       order: order,
@@ -82,51 +90,58 @@ const Groups = () => {
       const data = await response.json();
       setGroups(data);
     } catch (error) {
-      console.error(error);
+      console.error('fetchGroups error:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [sortBy, order, filters]);
 
-  // Función para obtener las opciones de filtros
-  const fetchOptions = async () => {
+  /**
+   * Función para obtener las opciones de filtros desde el backend.
+   */
+  const fetchOptions = useCallback(async () => {
     try {
       const response = await fetch(optionsUrl);
       if (!response.ok) throw new Error('Error al obtener las opciones');
       const data = await response.json();
       setOptions(data);
     } catch (error) {
-      console.error(error);
+      console.error('fetchOptions error:', error);
     }
-  };
+  }, []);
 
-  // Ejecuta el fetch cuando cambian el orden o filtros
+  // Ejecuta los fetch cada vez que cambian el orden o los filtros
   useEffect(() => {
     fetchGroups();
     fetchOptions();
-  }, [sortBy, order, filters]);
+  }, [fetchGroups, fetchOptions]);
 
-  // Cambiar ordenamiento
+  /**
+   * Maneja el cambio de ordenamiento al hacer clic en una columna.
+   * Actualiza el estado de orden y actualiza la URL con los nuevos parámetros.
+   */
   const handleSort = (column) => {
-    let newOrder = 'asc';
-    if (sortBy === column) {
-      newOrder = order === 'asc' ? 'desc' : 'asc';
-    }
+    const newOrder = sortBy === column && order === 'asc' ? 'desc' : 'asc';
     setSortBy(column);
     setOrder(newOrder);
-    // Actualiza la URL para reflejar el cambio (opcional)
+    // Actualiza la URL para reflejar los cambios en el orden
     const params = new URLSearchParams(location.search);
     params.set('sort_by', column);
     params.set('order', newOrder);
     navigate({ search: params.toString() });
   };
 
-  // Al hacer clic en una fila, redirige al detalle del grupo
+  /**
+   * Redirige al usuario al detalle de un grupo al hacer clic en una fila.
+   */
   const handleRowClick = (groupId) => {
     navigate(`/grupo/${groupId}`);
   };
 
-  // Función para exportar datos (simula la lógica antigua)
+  /**
+   * Función para exportar datos.
+   * Envía una petición POST y maneja diferentes respuestas, incluyendo autenticación requerida.
+   */
   const exportData = async () => {
     const params = new URLSearchParams({
       ...filters,
@@ -138,7 +153,7 @@ const Groups = () => {
       paramsObj[key] = value;
     });
 
-    // Abrir una nueva ventana/pestaña en blanco
+    // Abre una nueva ventana para la exportación
     const newWindow = window.open('', '_blank');
     try {
       const response = await fetch('/exportar_datos', {
@@ -166,20 +181,25 @@ const Groups = () => {
         }
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('exportData error:', error);
       alert('Ocurrió un error al exportar los datos.');
       newWindow.close();
     }
   };
 
-  // Maneja el envío del formulario de filtros
+  /**
+   * Maneja el envío del formulario de filtros.
+   * Al aplicar los filtros, se cierra el modal y se actualizan los datos.
+   */
   const handleFilterSubmit = (e) => {
     e.preventDefault();
     setShowModal(false);
-    // Con los filtros ya actualizados en el estado, el efecto de fetch se disparará
+    // El efecto de fetch se disparará automáticamente al actualizar el estado de filtros.
   };
 
-  // Función para renderizar el icono de ordenamiento
+  /**
+   * Renderiza el icono de ordenamiento según la columna y el estado actual.
+   */
   const renderSortIcon = (column) => {
     if (sortBy === column) {
       return order === 'asc' ? (
@@ -191,14 +211,31 @@ const Groups = () => {
     return null;
   };
 
+  const clearFilters = () => {
+    // Reinicia el estado de filtros a sus valores iniciales
+    setFilters({
+      id_grupo: '',
+      bus_company: '',
+      guide_name: '',
+      operaciones_name: '',
+      status: '',
+      start_date: '',
+      end_date: '',
+      assistant_name: '',
+      has_qr: null,
+      current_city: '',
+      current_hotel: '',
+    });
+    // Opcional: cierra el modal si lo deseas
+    setShowModal(false);
+    // Opcional: actualiza la URL para remover parámetros, si es necesario
+  };
+
   return (
     <div className="container-fluid">
-      {/* Botones superiores */}
+      {/* Botones superiores para filtros, creación de nuevos registros y exportación */}
       <div className="d-flex justify-content-end mb-3">
-        <Button
-          className="btn-custom me-2"
-          onClick={() => setShowModal(true)}
-        >
+        <Button className="btn-custom me-2" onClick={() => setShowModal(true)}>
           <i className="fas fa-filter"></i> Filtro
         </Button>
         <Link to="/nueva_rooming_list" className="btn btn-custom me-2">
@@ -220,62 +257,40 @@ const Groups = () => {
             <thead className="thead-custom">
               <tr>
                 <th onClick={() => handleSort('id_grupo')}>
-                  <a href="#!">
-                    ID Grupo {renderSortIcon('id_grupo')}
-                  </a>
+                  <a href="#!">ID Grupo {renderSortIcon('id_grupo')}</a>
                 </th>
                 <th onClick={() => handleSort('bus_company')}>
-                  <a href="#!">
-                    Compañía de Bus {renderSortIcon('bus_company')}
-                  </a>
+                  <a href="#!">Compañía de Bus {renderSortIcon('bus_company')}</a>
                 </th>
                 <th onClick={() => handleSort('guide_name')}>
-                  <a href="#!">
-                    Nombre del Guía {renderSortIcon('guide_name')}
-                  </a>
+                  <a href="#!">Nombre del Guía {renderSortIcon('guide_name')}</a>
                 </th>
                 <th onClick={() => handleSort('operaciones_name')}>
-                  <a href="#!">
-                    Operaciones {renderSortIcon('operaciones_name')}
-                  </a>
+                  <a href="#!">Operaciones {renderSortIcon('operaciones_name')}</a>
                 </th>
                 <th onClick={() => handleSort('status')}>
-                  <a href="#!">
-                    Estado {renderSortIcon('status')}
-                  </a>
+                  <a href="#!">Estado {renderSortIcon('status')}</a>
                 </th>
                 <th onClick={() => handleSort('start_date')}>
-                  <a href="#!">
-                    Fecha de Inicio {renderSortIcon('start_date')}
-                  </a>
+                  <a href="#!">Fecha de Inicio {renderSortIcon('start_date')}</a>
                 </th>
                 <th onClick={() => handleSort('end_date')}>
-                  <a href="#!">
-                    Fecha de Fin {renderSortIcon('end_date')}
-                  </a>
+                  <a href="#!">Fecha de Fin {renderSortIcon('end_date')}</a>
                 </th>
                 <th onClick={() => handleSort('nombre_asistente')}>
-                  <a href="#!">
-                    Asistente {renderSortIcon('nombre_asistente')}
-                  </a>
+                  <a href="#!">Asistente {renderSortIcon('nombre_asistente')}</a>
                 </th>
                 <th onClick={() => handleSort('PAX')}>
-                  <a href="#!">
-                    PAX {renderSortIcon('PAX')}
-                  </a>
+                  <a href="#!">PAX {renderSortIcon('PAX')}</a>
                 </th>
                 <th>
                   <span>QR</span>
                 </th>
                 <th onClick={() => handleSort('ciudad_actual')}>
-                  <a href="#!">
-                    Ciudad Actual {renderSortIcon('ciudad_actual')}
-                  </a>
+                  <a href="#!">Ciudad Actual {renderSortIcon('ciudad_actual')}</a>
                 </th>
                 <th onClick={() => handleSort('hotel_actual')}>
-                  <a href="#!">
-                    Hotel Actual {renderSortIcon('hotel_actual')}
-                  </a>
+                  <a href="#!">Hotel Actual {renderSortIcon('hotel_actual')}</a>
                 </th>
               </tr>
             </thead>
@@ -319,7 +334,7 @@ const Groups = () => {
         <Form onSubmit={handleFilterSubmit}>
           <Modal.Body>
             <Row>
-              {/* Primera columna */}
+              {/* Primera columna de filtros */}
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>ID Grupo</Form.Label>
@@ -401,7 +416,7 @@ const Groups = () => {
                   </Form.Select>
                 </Form.Group>
               </Col>
-              {/* Segunda columna */}
+              {/* Segunda columna de filtros */}
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Fecha de Inicio</Form.Label>
@@ -492,7 +507,8 @@ const Groups = () => {
             </Row>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" as={Link} to="/grupos">
+            {/* Botón para limpiar filtros: recarga la página actual */}
+            <Button variant="secondary" onClick={clearFilters}>
               Limpiar Filtros
             </Button>
             <Button variant="secondary" onClick={() => setShowModal(false)}>

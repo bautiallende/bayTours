@@ -76,16 +76,18 @@ class DaysHandler(BaseHandler):
                     )
                   request = await activity_services.create(db=db, activity_data=activity_data)  
             
-            if departure_date.date() > current_date.date():
+            if departure_date > current_date:
                 print(f'Departure date:{departure_date}, current_date:{current_date}')
                 # Aca deberiamos guardar el hotel
                 hotel_info = HotelReservation(
                     id = str(uuid4()),
-                    id_days = id_days,
-                    date = current_date, 
+                    id_group = id_group,
+                    created_at = current_date, 
+                    id_day = id_days,
+                    PAX = 0,
                     )
 
-                result = await hotel_reservation_services.create(db=db, hotel_data=hotel_info)
+                result = await hotel_reservation_services.create_base(db=db, hotel_data=hotel_info)
 
             # Avanzar la fecha al día siguiente
             current_date += timedelta(days=1)

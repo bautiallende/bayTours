@@ -14,7 +14,6 @@ from app.models.hotel_reservation import HotelReservation
 from app.models.days import Days
 from app.models.circuits import Circuits
 from app.models.responsables_hotels import ResponsablesHotels
-from sqlalchemy.future import select
 from datetime import datetime
 
 
@@ -79,7 +78,7 @@ async def get_tabla_group(db: AsyncSession, id_grupo: str = None, bus_company: s
         ).join(Operations, Group.id_operations == Operations.id_operation, isouter=True
         ).join(Assistant, Group.id_assistant == Assistant.id_assistant, isouter=True
         ).join(Circuits, Group.circuit == Circuits.id_circuit, isouter=True
-               ).distinct(Group.id_group).order_by(Group.start_date.desc())
+               ).distinct(Group.id_group)
 
     print(f"valor del id_group: {id_grupo}")
     # Aplicar filtros opcionales
@@ -101,7 +100,7 @@ async def get_tabla_group(db: AsyncSession, id_grupo: str = None, bus_company: s
     
     print(f'sort_by: {sort_by}')
     print(f'order by: {order}')
-
+    print(f'query antes de ser ordenada: {query}')
     # Aplicar ordenamiento
     if sort_by:
         sort_column = {
@@ -134,14 +133,14 @@ async def get_tabla_group(db: AsyncSession, id_grupo: str = None, bus_company: s
     
     for group in groups:
         # Convertir start_date y end_date a formato 'date' para la comparación
-        start_date = group.start_date.date() if group.start_date else None
-        end_date = group.end_date.date() if group.end_date else None
+        start_date = group.start_date if group.start_date else None
+        end_date = group.end_date if group.end_date else None
 
         if current_date < start_date:
             # El tour no ha comenzado
             first_stage = db.execute(
                 select(Days.city, HotelAlias.hotel_name.label('hotel_name'))
-                .join(HotelReservation, HotelReservation.id_days == Days.id, isouter=True)
+                .join(HotelReservation, HotelReservation.id_group == Days.id_group, isouter=True)
                 .join(HotelAlias, HotelReservation.id_hotel == HotelAlias.id_hotel, isouter=True)
                 .filter(Days.id_group == group.id_group)
                 .order_by(Days.date.asc())
@@ -158,7 +157,7 @@ async def get_tabla_group(db: AsyncSession, id_grupo: str = None, bus_company: s
             # El tour está en progreso
             current_location = db.execute(
                 select(Days.city, HotelAlias.hotel_name.label('hotel_name'))
-                .join(HotelReservation, HotelReservation.id_days == Days.id, isouter=True)
+                .join(HotelReservation, HotelReservation.id_day == Days.id, isouter=True)
                 .join(HotelAlias, HotelReservation.id_hotel == HotelAlias.id_hotel, isouter=True)
                 .filter(Days.id_group == group.id_group, Days.date <= current_date)
                 .order_by(Days.date.desc())

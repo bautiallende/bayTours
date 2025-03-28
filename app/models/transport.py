@@ -4,7 +4,7 @@ from ..database import Base
 class Transport(Base):
     __tablename__ = "transport"
 
-    id_transport = Column(Integer, primary_key=True, index=True)
+    id_transport = Column(String(255), primary_key=True, index=True)
     id_driver = Column(Integer)
     bus = Column(String(255))
     company_id = Column(String(255))

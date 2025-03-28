@@ -6,7 +6,7 @@ class Group(Base):
     
     id_group = Column(String(255), primary_key=True, index=True)
     id_guide = Column(Integer)
-    id_transport = Column(Integer)
+    id_transport = Column(String(255))
     id_assistant = Column(Integer)
     assistant_id_2 = Column(Integer)
     id_operations = Column(Integer)

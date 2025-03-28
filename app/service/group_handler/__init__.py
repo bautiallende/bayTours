@@ -1,4 +1,5 @@
 from .groups_handler import GroupsHandler
+from .group_auto_handler import GroupsAutoHandler
 
 groups = GroupsHandler()
 
@@ -11,4 +12,7 @@ groups_handlers = {
     'set_assistant': groups.set_assistant,
     'set_responsable_hotel': groups.set_responsable_hotels,
     'set_qr':groups.set_qr,
+
+
+    "rooming_list": GroupsAutoHandler(),
 }

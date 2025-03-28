@@ -1,9 +1,10 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { Table, Button } from 'react-bootstrap';
 
 /**
  * HotelAssignmentsTable muestra en forma tabular las asignaciones de hoteles.
- * 
+ *
  * Props:
  * - data: Array con las asignaciones de hoteles.
  * - groupPax: Número total de pasajeros del grupo.
@@ -14,14 +15,12 @@ const HotelAssignmentsTable = ({ data, groupPax, onEditAssignment }) => {
     return <p>No hay asignaciones de hoteles registradas.</p>;
   }
 
-  // Función para determinar el estilo de la fila
+  // Función para determinar el estilo de la fila según la información de la asignación.
   const getRowClass = (assignment) => {
     if (!assignment.hotel_name || assignment.hotel_name.trim() === "") {
-      // console.log('No hay hotel asignado, se pinta de rojo:', assignment.hotel_name);
       return 'row-red';
     }
     if (typeof assignment.pax !== 'undefined' && assignment.assigned_pax < groupPax) {
-      // console.log('PAX menor que el grupo, se pinta de amarillo:', assignment.assigned_pax);
       return 'row-yellow';
     }
     return '';
@@ -50,8 +49,15 @@ const HotelAssignmentsTable = ({ data, groupPax, onEditAssignment }) => {
         </tr>
       </thead>
       <tbody>
-        {data.map((assignment, index) => (
-          <tr key={index} className={getRowClass(assignment)}>
+        {data.map((assignment) => (
+          <tr
+            key={
+              assignment.assignment_id ||
+              assignment.id ||
+              assignment.city + assignment.date
+            }
+            className={getRowClass(assignment)}
+          >
             <td>{assignment.city}</td>
             <td>{assignment.date ? assignment.date.slice(0, 10) : ''}</td>
             <td>{assignment.hotel_name || '-'}</td>
@@ -67,16 +73,16 @@ const HotelAssignmentsTable = ({ data, groupPax, onEditAssignment }) => {
             <td>{assignment.factura ? 'Sí' : 'No'}</td>
             <td>{assignment.iga ? 'Sí' : 'No'}</td>
             <td>
-            <div style={{ maxHeight: '50px', overflowY: 'auto' }}>
-              {Array.isArray(assignment.notes) && assignment.notes.length > 0 ? (
-                assignment.notes.map((note, idx) => (
-                  <p key={idx} style={{ margin: 0 }}>{note}</p>
-                ))
-              ) : (
-                <p style={{ margin: 0 }}>Sin comentarios</p>
-              )}
-            </div>
-          </td>
+              <div style={{ maxHeight: '50px', overflowY: 'auto' }}>
+                {Array.isArray(assignment.notes) && assignment.notes.length > 0 ? (
+                  assignment.notes.map((note, idx) => (
+                    <p key={idx} style={{ margin: 0 }}>{note}</p>
+                  ))
+                ) : (
+                  <p style={{ margin: 0 }}>Sin comentarios</p>
+                )}
+              </div>
+            </td>
             <td>
               <Button variant="primary" size="sm" onClick={() => onEditAssignment(assignment)}>
                 Editar
@@ -87,6 +93,12 @@ const HotelAssignmentsTable = ({ data, groupPax, onEditAssignment }) => {
       </tbody>
     </Table>
   );
+};
+
+HotelAssignmentsTable.propTypes = {
+  data: PropTypes.array.isRequired,
+  groupPax: PropTypes.number.isRequired,
+  onEditAssignment: PropTypes.func.isRequired,
 };
 
 export default HotelAssignmentsTable;

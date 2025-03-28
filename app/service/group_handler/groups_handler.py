@@ -1,10 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from .base_handler import BaseHandler
+from .base_handler import GroupHandler
 import pandas as pd
 from app.models.group import Group
 from datetime import datetime
 from app.crud import group as group_functions
-from app.service import clients as clients_services
 from app.service import circuits as circuit_services
 from app.service import days as days_services
 from app.crud import client_group as client_group_functions
@@ -12,10 +11,12 @@ from app.service import guide_availability as guide_availability_functions
 from app.schemas.guide_availability import PeriodAllocation
 from app.service import guide as guide_service
 from app.service import transport as transport_services
+from app.service import hotel_reservation as hotel_reservation_service
+from app.service import clients as clients_services
 
 
 
-class GroupsHandler(BaseHandler):
+class GroupsHandler(GroupHandler):
     async def create_group(self, db:AsyncSession, id_group:str, pax:int, circuit_name:str, flight_data: dict|None = None):
         
         group_data = await group_functions.get_group(db, id_group)
@@ -160,8 +161,10 @@ class GroupsHandler(BaseHandler):
 
 
     async def get_group_data(self, db:AsyncSession, id_group:str, table:str, filters:dict|None):
-        group_data = (await group_functions.get_tabla_group(db=db, id_grupo=id_group))[0]
-
+        try:
+            group_data = (await group_functions.get_tabla_group(db=db, id_grupo=id_group))[0]
+        except:
+            return None
         responde = {}
         print(f'grupos: {group_data}')
 
@@ -183,8 +186,13 @@ class GroupsHandler(BaseHandler):
             #    'table_data':table_data,
             #    'itinerary':itinerary}   
 
-        elif table == '':
-            pass
+        elif table == 'hoteles':
+            table_data = await hotel_reservation_service.get_hotel_reservation(db=db, id_group=id_group, filters=filters)
+            responde = {
+                "group_data":group_data, 
+                'table_data':table_data,
+                'itinerary':None 
+                }   
         
         elif table == '':
             pass

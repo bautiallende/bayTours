@@ -29,6 +29,8 @@ async def get_grouped_client_data(db: AsyncSession, id_group:str, filters: dict 
             Clients.sex,
             Optionals.city,
             Optionals.name.label("optional_name"),
+            OptionalPurchase.id_activity,
+            OptionalPurchase.id_optionals,
             OptionalPurchase.price,
             OptionalPurchase.discount,
             OptionalPurchase.total,
@@ -137,6 +139,8 @@ async def get_grouped_client_data(db: AsyncSession, id_group:str, filters: dict 
         
         # Agregar la información del opcional en la ciudad correspondiente
         clients_data[client_key]["day_optionals"][city].append({
+            "id_activity": row.id_activity,
+            "id_optionals": row.id_optionals,
             "optional_name": row.optional_name,
             "price": row.price,
             "discount": row.discount,

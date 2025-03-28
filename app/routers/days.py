@@ -20,3 +20,11 @@ async def get_days_for_filter(id_group:str, db:Session = Depends(get_db)):
     return responde
 
 
+@router.get('/get_day_id')
+async def get_day_id(id_group:str ,db:Session = Depends(get_db)):
+    from app.crud.days import get_day_id
+    response = await  get_day_id(db=db, id_group=id_group)
+    if not response:
+        raise HTTPException(status_code=404, detail="No hay día para este grupo")
+    return response
+

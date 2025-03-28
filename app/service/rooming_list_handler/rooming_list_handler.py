@@ -5,6 +5,9 @@ from app.service import clients
 from app.service import group
 from datetime import datetime
 from dateutil.parser import parse
+from app.service import circuits as circuit_services
+from app.schemas.hotel_reservation import CreateBaseHotel
+from app.schemas.group import GroupCreate
 
 
 
@@ -35,11 +38,12 @@ class RoomingListHandler(BaseHandler):
         passengers_df.columns = df.iloc[passengers_start_idx, :].dropna()  # Asignar nombres de columnas
         print("Datos de Pasajeros:")
         print(passengers_df.head())  # Muestra las primeras filas para verificar
-        
+        print(passengers_df.T.head(20)) 
         # Calcular el número total de pasajeros (PAX)
         pax_total = passengers_df['PAX'].count()-1
         print(f"Total de PAX: {pax_total}")
 
+        passengers_df.to_csv('passengers.csv')
 
         # Identificar el vuelo de llegada 
         arrival_flight =  flights_df[flights_df["SEGMENTO"] == "IDA"].iloc[-1]
@@ -55,25 +59,35 @@ class RoomingListHandler(BaseHandler):
 
         # Calcular el año correcto para la fecha de llegada
         arrival_date_str = f"{arrival_date} {arrival_time}"
-        arrival_datetime = await self.calculate_datetime(arrival_date_str)
+        arrival_datetime = (await self.calculate_datetime(arrival_date_str)).date()
 
         # Calcular el año correcto para la fecha de salida
         departure_date_str = f"{departure_date} {departure_time}"
-        departure_datetime = await self.calculate_datetime(departure_date_str)
+        departure_datetime = (await self.calculate_datetime(departure_date_str)).date()
 
         print(f"VUELO LLEGADA {arrival_flight_number}, {arrival_datetime}")
         print(f"VUELO REGRESO {departure_flight_number}, {departure_datetime}")
 
-        flight_data = {
+        print(f'Circuit Name: {circuit_name}')
+        print(f'Group Number: {group_number}')
+
+        # Obtenemos los datos del circuito
+        circuit_data = await circuit_services.get_circuit_id(db=db, name=circuit_name)
+
+        group_data = GroupCreate(**{
+            "id_group": group_number,
             "start_date": arrival_datetime,
             "end_date": departure_datetime,
             "initial_flight": arrival_flight_number,
-            "end_flight": departure_flight_number, 
-        }
-
+            "end_flight": departure_flight_number,
+            "PAX": pax_total,
+            "circuit": circuit_data.id_circuit
+            })
+        
+        new_group = await group.create(db=db, group_data=group_data, source="rooming_list")
 
         # Creamos en nuevo grupo
-        await group.new_group(db=db, id_group=group_number, flight_data=flight_data, pax = pax_total, circuit_name=circuit_name)
+        #await group.new_group(db=db, id_group=group_number, flight_data=flight_data, pax = pax_total, circuit_name=circuit_name)
 
         # Guardamos la información de los clients
         await clients.new_group(db=db, df=passengers_df, group_number=group_number, circuit_name=circuit_name)
@@ -93,9 +107,14 @@ class RoomingListHandler(BaseHandler):
 
     async def calculate_datetime(self, date_str: str) -> datetime:
         try:
+            print(f'date_str: {date_str}')
             # Verificar si la cadena contiene año basándonos en la longitud
-            if len(date_str.split('-')) == 2:  # Solo contiene día y mes
+            if len(date_str.split('-')) == 2 and len(date_str.split()) == 1:  # Solo contiene día y mes
                 date = datetime.strptime(date_str, "%d-%m")
+                now = datetime.now()
+                date = date.replace(year=now.year)
+            elif len(date_str.split('-')) == 2 and len(date_str.split()) == 2:  # Contiene día, mes y hora
+                date = datetime.strptime(date_str, "%d-%m %H:%M")
                 now = datetime.now()
                 date = date.replace(year=now.year)
             else:
@@ -104,8 +123,9 @@ class RoomingListHandler(BaseHandler):
 
             # Si la fecha ya pasó este año, ajustar al próximo año
             now = datetime.now()
-            # if date < now:
-            #     date = date.replace(year=now.year + 1)
+            print(f"date: {date}")
+            if date < now and date.month != now.month:
+                date = date.replace(year=now.year + 1)
 
             return date
         except ValueError as e:
@@ -119,7 +139,9 @@ def extract_group_and_circuit(first_row):
     # Este método extrae el número de grupo y el nombre del circuito de la primera fila
     parts = first_row.split(" - ")
     group_number = parts[0].strip()
-    circuit_name = parts[1].split(".")[0].strip()
+    print(f'parts: {parts}')
+    print(f'parte separada: {parts[1].split(".")[0].strip().split('(')[0]}')
+    circuit_name = parts[1].split(".")[0].strip().split('(')[0].strip()
     return group_number, circuit_name
 
 

@@ -132,8 +132,11 @@ async def get_group(id_group:str, db: Session = Depends(get_db)):
 
 @router.get('/tabla_groups')
 async def get_tabla_groups(id_grupo: str = None, bus_company: str = None, guide_name: str = None, operaciones_name: str = None, status: str = None, 
-                           assistant_name: str = None, has_qr: bool = None, current_city: str = None, current_hotel: str = None, sort_by: str = None, order: str = None,db:Session = Depends(get_db)):
+                           assistant_name: str = None, has_qr: str|bool = None, current_city: str = None, current_hotel: str = None, sort_by: str = None, order: str = None,db:Session = Depends(get_db)):
     
+    print(f'sort by {sort_by}')
+    if has_qr == 'null':
+        has_qr = None
     groups = await group_service.get_tabla_groups(db=db, id_grupo=id_grupo, bus_company=bus_company, guide_name=guide_name, operaciones_name=operaciones_name, status=status,
                                                   assistant_name=assistant_name, has_qr=has_qr, current_city=current_city, current_hotel=current_hotel, sort_by=sort_by, order=order)
     print(f'La salida de tabla grupos es: \n{group}')
@@ -155,6 +158,8 @@ async def group_data(id_group:str , table:str, db: Session = Depends(get_db), fi
         filters_dict = json.loads(filters)
     print(f'Entrada por el endpoint group_data con los parametros: id_group {id_group}, y table: {table}, \nfilters:{filters_dict} ')
     group_data = await group_service.get_group_data(db=db, id_group=id_group, table=table, filters=filters_dict)
+    if not group_data:
+        raise HTTPException(status_code=404, detail="Group not found")
     return group_data
 
 

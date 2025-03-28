@@ -19,10 +19,14 @@ class ClientsHandler(BaseHandler):
     async def create(self, db:AsyncSession, df: pd.DataFrame, group_number:str, circuit_name:str):
         df = df.replace(np.nan, None)
 
+        room_type = None
+        old_room_type = None
+
+
         for _, row in df.iterrows():
             
             packete = None
-
+            
             if not row['APELLIDO PATERNO'] or not row['PRIMER NOMBRE']:
                 continue
 
@@ -30,6 +34,12 @@ class ClientsHandler(BaseHandler):
             if isinstance(row['APELLIDO PATERNO'], str) and row['APELLIDO PATERNO'].lower() == 'apellido paterno':
                 continue
             
+            
+
+            print(f'habitacion encontrada: {row.get('TIPO DE HABITACIÓN', None):}')
+            print(f'habitacion a asignar: {room_type}')
+            print(f'habitacion anterior: {old_room_type}')
+
             # Verificamos si el cliente ya existe en la base de datos
             existing_client = await clients_service.get_clients(
                 db=db,
@@ -74,7 +84,7 @@ class ClientsHandler(BaseHandler):
 
                 
                 # hay que crear tmabien la funcion para las habitaciones. 
-                if row['PAQUETE 4 2024']:
+                if row.get('PAQUETE 4 2024', None):
                     print(f"Paquete: {row['PAQUETE 4 2024']}")
 
                     packete = row['PAQUETE 4 2024'].split(' ')[1]
@@ -88,11 +98,17 @@ class ClientsHandler(BaseHandler):
 
                     response = await create_optional_purchase(db=db, group_number=group_number, id_clientes=id_cliente, packages=packete, circuit_name=circuit_name, age=age)
                 
+                
                 # Creamos y guardamos las habitaciones de los clientes
                 await client_room_services.create_client_room(db=db, client_id=id_cliente, group_id=group_number)
                 
-                
+            if row.get('TIPO DE HABITACIÓN', None):
+                room_type = row['TIPO DE HABITACIÓN']
+                old_room_type = room_type
+            elif not row.get('TIPO DE HABITACION', None) and old_room_type:
+                room_type = old_room_type
+                old_room_type = None  
 
-            response = await client_group_functions.new_client_group(db=db, client_id=id_cliente, id_group=group_number, packages=packete)
+            response = await client_group_functions.new_client_group(db=db, client_id=id_cliente, id_group=group_number, packages=packete, room_type=room_type)
 
             

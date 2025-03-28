@@ -4,6 +4,13 @@ from .transport_handler import transport_handlers
 
 
 
+async def create(db:AsyncSession, source:str):
+    handler = transport_handlers.get(source)
+    if handler:
+        response = await handler.create(db)
+    else:
+        response = None
+    return response
 
 async def update_transport(db:AsyncSession, id_group:str, company_id:int, bus_code:str):
     handler = transport_handlers.get('update_bus')

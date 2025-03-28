@@ -5,6 +5,11 @@ from app.models.transport_company import TransportCompany
 from app.models.group import Group
 
 
+async def create(db:AsyncSession, transport_line= Transport):
+    db.add(transport_line)
+    db.commit()
+    db.refresh(transport_line)
+    return transport_line 
 
 
 async def update_bus(db: AsyncSession, id_group: str, bus_code: str, company_id: int):

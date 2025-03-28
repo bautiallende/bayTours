@@ -1,42 +1,29 @@
 import React from "react";
-import { Nav } from "react-bootstrap";
 import { Link } from "react-router-dom";
+
+// Array de configuración para los ítems del menú
+const sidebarItems = [
+  { label: "Inicio", icon: "fas fa-home", to: "/home" },
+  { label: "Grupos", icon: "fas fa-users", to: "/grupos" },
+  { label: "Clientes", icon: "fas fa-user-friends", to: "/clientes" },
+  { label: "Itinerario", icon: "fas fa-route", to: "/itinerario" },
+  { label: "Guías", icon: "fas fa-user-tie", to: "/guias" },
+  { label: "Hoteles", icon: "fas fa-hotel", to: "/hoteles" },
+];
 
 const Sidebar = () => {
   return (
-    // Cambiamos el contenedor a <nav> con id y clases para replicar el HTML original
+    // Elemento <nav> para la navegación lateral con un aria-label para accesibilidad
     <nav id="sidebarMenu" className="sidebar" aria-label="Menú lateral">
       <ul className="nav flex-column d-flex">
-        <li className="nav-item">
-          <Link className="nav-link" to="/home">
-            <i className="fas fa-home"></i> <span>Inicio</span>
-          </Link>
-        </li>
-        <li className="nav-item">
-          <Link className="nav-link" to="/grupos">
-            <i className="fas fa-users"></i> <span>Grupos</span>
-          </Link>
-        </li>
-        <li className="nav-item">
-          <Link className="nav-link" to="/clientes">
-            <i className="fas fa-user-friends"></i> <span>Clientes</span>
-          </Link>
-        </li>
-        <li className="nav-item">
-          <Link className="nav-link" to="/itinerario">
-            <i className="fas fa-route"></i> <span>Itinerario</span>
-          </Link>
-        </li>
-        <li className="nav-item">
-          <Link className="nav-link" to="/guias">
-            <i className="fas fa-user-tie"></i> <span>Guías</span>
-          </Link>
-        </li>
-        <li className="nav-item">
-          <Link className="nav-link" to="/hoteles">
-            <i className="fas fa-hotel"></i> <span>Hoteles</span>
-          </Link>
-        </li>
+        {sidebarItems.map((item, index) => (
+          <li className="nav-item" key={index}>
+            <Link className="nav-link" to={item.to}>
+              <i className={item.icon}></i> <span>{item.label}</span>
+            </Link>
+          </li>
+        ))}
+        {/* Separador para separar el contenido principal del botón de Log Out */}
         <li className="nav-item mt-auto">
           <hr className="sidebar-divider" />
         </li>

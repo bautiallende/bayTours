@@ -1,12 +1,44 @@
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { Modal, Button, Form, Row, Col, Alert } from 'react-bootstrap';
 
 /**
- * Función auxiliar para formatear una fecha al formato "YYYY-MM-DD".
- * Se espera que el string de fecha sea ISO o similar.
+ * Extrae el año de una fecha en formato "DD/MM/YYYY" o "DD-MM-YYYY".
  */
-const formatDateForInput = (dateString) => {
+const getYearFromDate = (dateStr) => {
+  if (!dateStr) return '';
+  const parts = dateStr.includes('/') ? dateStr.split('/') : dateStr.split('-');
+  return parts.length === 3 ? parts[2] : '';
+};
+
+/**
+ * Función auxiliar para formatear una fecha al formato "YYYY-MM-DD".
+ * Soporta:
+ * - "DD/MM/YYYY" o "DD-MM-YYYY"
+ * - "DD/MM" o "DD-MM", usando defaultYear si se proporciona.
+ * - Cadenas en formato ISO u otro, usando Date.
+ */
+const formatDateForInput = (dateString, defaultYear = '') => {
   if (!dateString) return '';
+  
+  if (dateString.includes('/')) {
+    const parts = dateString.split('/');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    if (parts.length === 2 && defaultYear) {
+      return `${defaultYear}-${parts[1]}-${parts[0]}`;
+    }
+  }
+  if (dateString.includes('-')) {
+    const parts = dateString.split('-');
+    if (parts.length === 3 && parts[0].length === 2) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    if (parts.length === 2 && defaultYear) {
+      return `${defaultYear}-${parts[1]}-${parts[0]}`;
+    }
+  }
   const dateObj = new Date(dateString);
   if (isNaN(dateObj.getTime())) return '';
   return dateObj.toISOString().split('T')[0];
@@ -20,12 +52,21 @@ const formatDateForInput = (dateString) => {
  * - onHide: Callback para ocultar el modal.
  * - initialData: Objeto que debe contener al menos { city, date, id_group, paxAssigned }.
  *                (La ciudad, fecha y PAX asignados se muestran en solo lectura.)
- * - onSave: Callback que recibe el payload con los datos ingresados; el componente padre se encargará
- *           de llamar al endpoint POST /asign_hotel_same_day.
+ * - onSave: Callback que recibe el payload con los datos ingresados; debe retornar una promesa.
  * - groupPax: Número total de pasajeros del grupo (para validar el número de PAX asignados).
+ * - assignedPaxTotal: Número total de PAX ya asignados (según el backend).
+ * - onAddAnother: Callback para iniciar el flujo de agregar otro hotel.
  */
-const HotelAddAnotherModal = ({ show, onHide, initialData = {}, onSave, groupPax, assignedPaxTotal = 0, onAddAnother }) => {
-  // Estados para los campos que se muestran o se pueden editar.
+const HotelAddAnotherModal = ({
+  show,
+  onHide,
+  initialData = {},
+  onSave,
+  groupPax,
+  assignedPaxTotal = 0,
+  onAddAnother,
+}) => {
+  // Estados para los campos editables y mostrados
   const [city, setCity] = useState('');
   const [date, setDate] = useState('');
   const [hotelId, setHotelId] = useState('');
@@ -34,7 +75,7 @@ const HotelAddAnotherModal = ({ show, onHide, initialData = {}, onSave, groupPax
   const [checkOut, setCheckOut] = useState('');
   const [roomingList, setRoomingList] = useState(false);
   const [proForma, setProForma] = useState(false);
-  //const [currency, setCurrency] = useState('EUR');
+  const [currency, setCurrency] = useState('EUR');
   const [totalToPay, setTotalToPay] = useState(0);
   const [paymentDate, setPaymentDate] = useState('');
   const [paymentDoneDate, setPaymentDoneDate] = useState('');
@@ -44,17 +85,27 @@ const HotelAddAnotherModal = ({ show, onHide, initialData = {}, onSave, groupPax
   const [comment, setComment] = useState('');
   const [validationMsg, setValidationMsg] = useState('');
 
-  // Al cambiar initialData, actualizamos los estados correspondientes.
+  // No usamos localAssignedPax; en su lugar, calculamos la disponibilidad directamente
+  const groupPaxNum = parseInt(groupPax, 10) || 0;
+  const availablePax = groupPaxNum - Number(assignedPaxTotal);
   useEffect(() => {
-    // Se asume que el padre nos pasa { city, date, id_group, paxAssigned } al abrir el modal.
+    console.log('groupPax:', groupPaxNum, 'assignedPaxTotal:', assignedPaxTotal, 'availablePax:', availablePax);
+  }, [groupPaxNum, assignedPaxTotal, availablePax]);
+
+  // Extraer el año de la fecha principal para usar en el formateo
+  const defaultYear = getYearFromDate(initialData.date);
+
+  // Cuando cambia initialData, actualizamos los estados correspondientes (sin reiniciar city y date)
+  useEffect(() => {
     setCity(initialData.city || '');
-    setDate(formatDateForInput(initialData.date));
+    setDate(formatDateForInput(initialData.date, defaultYear));
     setPaxAssigned(initialData.paxAssigned || 0);
-    // Los demás campos se inician en valores por defecto (o vacíos) para "agregar"
+    // Reiniciamos los campos que deben limpiarse para agregar nueva asignación
     setHotelId('');
     setHotelsList([]);
-    setCheckIn('');
-    setCheckOut('');
+    // No reiniciamos checkIn y checkOut para conservar el valor calculado si ya existe
+    // setCheckIn('');
+    // setCheckOut('');
     setRoomingList(false);
     setProForma(false);
     setCurrency('EUR');
@@ -65,71 +116,107 @@ const HotelAddAnotherModal = ({ show, onHide, initialData = {}, onSave, groupPax
     setIga(false);
     setComment('');
     setValidationMsg('');
-  }, [initialData]);
+    // Nota: No modificamos assignedPaxTotal aquí, se recibe de la prop.
+  }, [initialData, defaultYear]);
 
-  // Cuando la fecha (initialData.date) esté disponible, calculamos automáticamente checkIn y checkOut
+  // Al abrir el modal, reiniciamos solo los campos editables que deben limpiarse, sin tocar city, date, checkIn, checkOut ni assignedPaxTotal
+  useEffect(() => {
+    if (show) {
+      console.log('Modal abierto. initialData:', initialData);
+
+      // Solo reiniciamos los campos editables y dejamos intactos "city" y "date"
+      setHotelId('');
+      setHotelsList([]);
+      // Si checkIn y checkOut ya tienen valor, los dejamos
+      if (!checkIn && date) {
+        const dt = new Date(date);
+        if (!isNaN(dt.getTime())) {
+          setCheckIn(date);
+          dt.setDate(dt.getDate() + 1);
+          const computed = dt.toISOString().split('T')[0];
+          setCheckOut(computed);
+          console.log('Modal: Calculado checkIn:', date, 'checkOut:', computed);
+        } else {
+          console.error("Invalid date:", date);
+          setCheckIn('');
+          setCheckOut('');
+        }
+      }
+      setRoomingList(false);
+      setProForma(false);
+      setCurrency('EUR');
+      setTotalToPay(0);
+      setPaymentDate('');
+      setPaymentDoneDate('');
+      setFactura(false);
+      setIga(false);
+      setComment('');
+      setValidationMsg('');
+      // Forzamos recargar la lista de hoteles si "city" existe
+      if (city) {
+        fetch(`${process.env.REACT_APP_API_URL}/hotels/get_hotel_by_city?city=${encodeURIComponent(city)}`)
+          .then((res) => res.json())
+          .then((data) => {
+            setHotelsList(data);
+            console.log('Recargados hoteles para', city, data);
+          })
+          .catch((err) => console.error('Error al obtener hoteles:', err));
+      }
+    }
+  }, [show, city, date, checkIn]);
+
+  // Cuando la fecha esté disponible, calcular checkIn y checkOut automáticamente
   useEffect(() => {
     if (date) {
-      setCheckIn(date);
       const dt = new Date(date);
+      if (isNaN(dt.getTime())) {
+        console.error("Invalid date value:", date);
+        setCheckOut('');
+        return;
+      }
+      setCheckIn(date);
       dt.setDate(dt.getDate() + 1);
-      setCheckOut(dt.toISOString().split('T')[0]);
+      const computedCheckOut = dt.toISOString().split('T')[0];
+      setCheckOut(computedCheckOut);
+      console.log('Calculado checkIn:', date, 'checkOut:', computedCheckOut);
     }
   }, [date]);
 
-  // Al tener la ciudad, hacemos GET para obtener la lista de hoteles disponibles
+  // Al tener la ciudad y si el modal está abierto, obtenemos la lista de hoteles disponibles
   useEffect(() => {
-    if (city) {
+    if (city && show) {
       fetch(`${process.env.REACT_APP_API_URL}/hotels/get_hotel_by_city?city=${encodeURIComponent(city)}`)
         .then((res) => res.json())
         .then((data) => {
           setHotelsList(data);
+          console.log('Hoteles disponibles para', city, data);
         })
         .catch((err) => console.error('Error al obtener hoteles:', err));
     }
-  }, [city]);
-
-  // Calcular la cantidad de PAX disponibles para asignar en este nuevo registro.
-  // Es decir, el total del grupo menos los PAX ya asignados (assignedPaxTotal).
-  console.log('PAX asignados total:', assignedPaxTotal);
-  const availablePax = parseInt(groupPax, 10) - parseInt(assignedPaxTotal, 10);
-
-  // Condición para habilitar el botón de "Guardar Cambios":
-  // Debe ser mayor a 0 y menor o igual a los PAX disponibles.
-  const isSaveEnabled =
-  parseInt(paxAssigned, 10) > 0 && parseInt(paxAssigned, 10) <= availablePax;
-
-  // Condición para habilitar el botón "Agregar otro hotel"
-  const canAddAnother = availablePax > 0;
-
-  console.log('PAX disponibles availablePax:', availablePax);
-  console.log('paxAssigned nuevo hotel:', paxAssigned);
-  console.log('assignedPaxTotal nuevo hotel:', assignedPaxTotal);
-  console.log('groupPax nuevo hotel:', groupPax);
-
-
+  }, [city, show]);
 
   // Función para manejar el envío del formulario (guardado)
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
     const paxVal = parseInt(paxAssigned, 10);
+    console.log('handleSubmit: paxAssigned:', paxAssigned, 'paxVal:', paxVal, 'availablePax:', availablePax);
     if (paxVal === 0) {
       setValidationMsg('El número de PAX asignados debe ser mayor que 0.');
       return;
     }
     if (paxVal > availablePax) {
-      setValidationMsg(
-        `El número de PAX asignados no puede superar los disponibles (${availablePax}).`
-      );
+      setValidationMsg(`El número de PAX asignados no puede superar los disponibles (${availablePax}).`);
       return;
     }
-    // Construir el payload para enviar al backend
+    // Construir el payload
     const payload = {
-      id_hotel: hotelId,
+      id_hotel: parseInt(hotelId, 10),
       id_group: initialData.id_group || '',
       id_day: initialData.id_day || '',
-      start_date: checkIn,
-      end_date: checkOut,
+      start_date: checkIn || null,
+      end_date: checkOut || null,
       pax: paxVal,
       currency,
       total_to_pay: parseFloat(totalToPay),
@@ -144,51 +231,58 @@ const HotelAddAnotherModal = ({ show, onHide, initialData = {}, onSave, groupPax
       updated_by: '',
     };
     console.log('Payload a enviar (add another):', payload);
-    onSave(payload);
-    onHide();
+    return Promise.resolve(onSave(payload))
+      .then(() => {
+        onHide();
+        return true;
+      })
+      .catch((error) => {
+        if (error && error.detail) {
+          setValidationMsg(error.detail);
+        } else {
+          setValidationMsg('Error al agregar la asignación.');
+        }
+        console.error('Error en onSave:', error);
+        return false;
+      });
   };
-
+  
   // Función para manejar el clic en "Agregar otro hotel para este día"
-  const handleAddAnotherClick = () => {
-    // Primero se guarda la asignación actual
-    // Creamos un evento artificial para disparar handleSubmit
-    handleSubmit(new Event('submit'));
-    // Luego se invoca el callback para abrir el flujo de agregar otro hotel
-    if (onAddAnother) {
+  const handleAddAnotherClick = async () => {
+    const saved = await handleSubmit();
+    if (saved && onAddAnother) {
+      // Calculamos el nuevo total acumulado de PAX asignados:
+      const newTotal = Number(assignedPaxTotal) + Number(paxAssigned);
+      // Llamamos al callback onAddAnother pasando el valor acumulado actualizado.
       onAddAnother({
         city,
         date,
-        paxAssigned: (paxAssigned),
+        paxAssigned: newTotal, // Enviamos el total acumulado
         id_day: initialData.id_day || '',
-        // Se pueden pasar otros campos si es necesario.
       });
     }
   };
+  
 
-  const [currency, setCurrency] = useState('EUR');
+  // Carga de divisas (simulada)
   const [allCurrencies, setAllCurrencies] = useState([]);
-
   useEffect(() => {
-    // Simula la carga de todas las divisas desde una API o una lista estática
     const fetchCurrencies = async () => {
       const currencies = ['EUR', 'USD', 'CHF', 'GBP', 'ARS', 'JPY', 'CNY', 'INR', 'BRL', 'CAD'];
       setAllCurrencies(currencies);
     };
-
     fetchCurrencies();
   }, []);
-
   const favoriteCurrencies = ['EUR', 'USD', 'CHF', 'GBP'];
-
 
   return (
     <Modal show={show} onHide={onHide} centered size="lg">
-      <Form onSubmit={handleSubmit}>
+      <Form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
         <Modal.Header closeButton>
           <Modal.Title>Agregar otro hotel para este día</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {/* Fila 1: Ciudad y Fecha (solo lectura) */}
+          {/* Row 1: Ciudad y Fecha (solo lectura) */}
           <Row className="mb-3">
             <Col md={6}>
               <Form.Group controlId="formCity">
@@ -203,7 +297,7 @@ const HotelAddAnotherModal = ({ show, onHide, initialData = {}, onSave, groupPax
               </Form.Group>
             </Col>
           </Row>
-          {/* Fila 2: Selección de Hotel */}
+          {/* Row 2: Selección de Hotel */}
           <Form.Group controlId="formHotel">
             <Form.Label>Hotel</Form.Label>
             <Form.Select value={hotelId} onChange={(e) => setHotelId(e.target.value)} required>
@@ -215,7 +309,7 @@ const HotelAddAnotherModal = ({ show, onHide, initialData = {}, onSave, groupPax
               ))}
             </Form.Select>
           </Form.Group>
-          {/* Fila 3: Check-in y Check-out */}
+          {/* Row 3: Check-in y Check-out */}
           <Row className="mb-3">
             <Col md={6}>
               <Form.Group controlId="formCheckIn">
@@ -240,7 +334,7 @@ const HotelAddAnotherModal = ({ show, onHide, initialData = {}, onSave, groupPax
               </Form.Group>
             </Col>
           </Row>
-          {/* Fila 4: Switches para Rooming List y Pro Forma */}
+          {/* Row 4: Switches para Rooming List y Pro Forma */}
           <Row className="mb-3">
             <Col md={4}>
               <Form.Check
@@ -261,13 +355,13 @@ const HotelAddAnotherModal = ({ show, onHide, initialData = {}, onSave, groupPax
               />
             </Col>
           </Row>
-          {/* Fila 5: Moneda, Total a Pagar y PAX Asignados */}
+          {/* Row 5: Moneda, Total a Pagar y PAX Asignados */}
           <Row className="mb-3">
             <Col md={4}>
               <Form.Group controlId="formCurrency">
                 <Form.Label>Divisa</Form.Label>
                 <Form.Select value={currency} onChange={(e) => setCurrency(e.target.value)}>
-                <optgroup label="Favoritas">
+                  <optgroup label="Favoritas">
                     {favoriteCurrencies.map((favCurrency) => (
                       <option key={favCurrency} value={favCurrency}>
                         {favCurrency}
@@ -282,7 +376,7 @@ const HotelAddAnotherModal = ({ show, onHide, initialData = {}, onSave, groupPax
                           {curr}
                         </option>
                       ))}
-                </optgroup>
+                  </optgroup>
                 </Form.Select>
               </Form.Group>
             </Col>
@@ -312,7 +406,7 @@ const HotelAddAnotherModal = ({ show, onHide, initialData = {}, onSave, groupPax
               </Form.Group>
             </Col>
           </Row>
-          {/* Fila 6: Fechas de Pago */}
+          {/* Row 6: Fechas de Pago */}
           <Row className="mb-3">
             <Col md={6}>
               <Form.Group controlId="formPaymentDate">
@@ -335,7 +429,7 @@ const HotelAddAnotherModal = ({ show, onHide, initialData = {}, onSave, groupPax
               </Form.Group>
             </Col>
           </Row>
-          {/* Fila 7: Factura e IGA */}
+          {/* Row 7: Factura e IGA */}
           <Row className="mb-3">
             <Col md={6}>
               <Form.Check
@@ -356,7 +450,7 @@ const HotelAddAnotherModal = ({ show, onHide, initialData = {}, onSave, groupPax
               />
             </Col>
           </Row>
-          {/* Fila 8: Comentarios */}
+          {/* Row 8: Comentarios */}
           <Form.Group controlId="formComments" className="mb-3">
             <Form.Label>Comentarios</Form.Label>
             <Form.Control
@@ -391,6 +485,16 @@ const HotelAddAnotherModal = ({ show, onHide, initialData = {}, onSave, groupPax
       </Form>
     </Modal>
   );
+};
+
+HotelAddAnotherModal.propTypes = {
+  show: PropTypes.bool.isRequired,
+  onHide: PropTypes.func.isRequired,
+  initialData: PropTypes.object,
+  onSave: PropTypes.func.isRequired,
+  groupPax: PropTypes.number.isRequired,
+  assignedPaxTotal: PropTypes.number,
+  onAddAnother: PropTypes.func,
 };
 
 export default HotelAddAnotherModal;

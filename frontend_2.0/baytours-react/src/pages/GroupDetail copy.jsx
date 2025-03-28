@@ -1,11 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Button, Container, Row, Col, Tab, Nav, Spinner } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Button, Container, Row, Col, Card, Badge, Tab, Nav, Spinner } from 'react-bootstrap';
 import { useParams, useLocation, Link, useNavigate    } from 'react-router-dom';
-
-// Importamos nuestros nuevos componentes refactorizados
-import InfoGeneral from '../components/GroupDetail/InfoGeneral';
-import ItinerarySection from '../components/GroupDetail/ItinerarySection';
-import ContactSection from '../components/GroupDetail/ContactSection';
 
 // Componentes principales para mostrar datos
 import ClientsTable from '../components/ClientsTable';
@@ -16,14 +11,7 @@ import HotelAssignmentsTable from '../components/HotelAssignmentsTable'; // Plac
 import HotelModal from '../components/GroupDetail/modals/HotelModal';
 // Importamos el modal para agregar otro hotel (HotelAddAnotherModal.jsx)
 import HotelAddAnotherModal from '../components/GroupDetail/modals/HotelAddAnotherModal';
-import HotelFilterModal from '../components/GroupDetail/modals/HotelFilterModal';
 
-
-// Importar los modales para los cuartos 
-import RoomsTable from '../components/GroupDetail/RoomsTable';
-import CitySubMenu from '../components/GroupDetail/CitySubmenu';
-import RoomAssignmentModal from '../components/GroupDetail/modals/RoomAssignmentModal';
-import RoomFilterModal from '../components/GroupDetail/modals/RoomFilterModal';
 
 // Modales para edición de información general
 import EditGuideModal from '../components/GroupDetail/modals/EditGuideModal';
@@ -36,7 +24,7 @@ import EditAssistantModal from '../components/GroupDetail/modals/EditAssistantMo
 import EditResponsibleHotelsModal from '../components/GroupDetail/modals/EditResponsibleHotelsModal';
 
 // Importar modales para opcionales (Add, Edit y Delete)
-import AddOptionalModal from '../components/GroupDetail/modals/AddOptionalModal';
+import AddOptionalModal from '../components/AddOptionalModal';
 import EditOptionalModal from '../components/GroupDetail/modals/EditOptionalModal';
 import DeleteOptionalModal from '../components/GroupDetail/modals/DeleteOptionalModal';
 
@@ -44,6 +32,8 @@ import OptionModal from '../components/GroupDetail/modals/OptionModal';
 // ... otros modales que necesites
 
 
+// Si usas react-leaflet para el mapa (opcional)
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
 
@@ -110,20 +100,9 @@ const GroupDetail = () => {
   // Estado para el modal de agregar otro hotel para el mismo día (nuevo)
   const [showHotelAddAnotherModal, setShowHotelAddAnotherModal] = useState(false);
   const [hotelAddAnotherInitialData, setHotelAddAnotherInitialData] = useState({});
-  const [showHotelFilterModal, setShowHotelFilterModal] = useState(false);
-
-  // Estados para la sección de cuartos
-  const [dayOptions, setDayOptions] = useState({}); 
-  const [selectedCity, setSelectedCity] = useState('');
-  const [roomAssignments, setRoomAssignments] = useState([]);
-  const [showRoomModal, setShowRoomModal] = useState(false);
-  const [roomModalData, setRoomModalData] = useState(null);
-  const [availableHotels, setAvailableHotels] = useState([]);
-  const [availableCity, setAvailableCity] = useState([]);
-  const [availableRooms, setAvailableRooms] = useState([]);
   
   // --- Función para obtener datos del grupo ---
-  const fetchGroupData = useCallback(() => {
+  const fetchGroupData = () => {
     const apiUrl = `${process.env.REACT_APP_API_URL}/groups/group_data`;
     // Se envía la pestaña activa (clientes, hoteles, etc.) en la variable "table"
     const params = new URLSearchParams({ id_group: id, table: activeTab });
@@ -144,109 +123,15 @@ const GroupDetail = () => {
       })
       .catch(error => console.error('Error al obtener el detalle del grupo:', error))
       .finally(() => setLoading(false));
-  }, [id , activeTab, filters]);
+  };
 
   // Actualizar datos cada vez que cambie el id, la pestaña activa o los filtros
   useEffect(() => {
     setLoading(true);
     fetchGroupData();
-  }, [fetchGroupData]);
+  }, [id, activeTab, filters]);
 
   // --- Callbacks para manejar modales de opcionales ---
-  // Función para obtener las opciones de días (submenú de ciudades)
-const fetchDayOptions = () => {
-  fetch(`${process.env.REACT_APP_API_URL}/days/get_day_id?id_group=${groupData.id_group}`)
-    .then(res => res.json())
-    .then(data => {
-      setDayOptions(data);
-      // Si no hay ciudad seleccionada, elegir la primera clave
-      const cities = Object.keys(data);
-      if (cities.length > 0 && !selectedCity) {
-        setSelectedCity(cities[0]);
-      }
-    })
-    .catch(err => console.error('Error al obtener opciones de días:', err));
-};
-
-// Función para obtener asignaciones de cuartos según id_days
-const fetchRoomAssignments = () => {
-  if (selectedCity && dayOptions[selectedCity]) {
-    const id_days = dayOptions[selectedCity]; // Esto es un array de strings
-    fetch(`${process.env.REACT_APP_API_URL}/rooms/`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(id_days),
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setRoomAssignments(data);
-        }
-      })
-      .catch(err => console.error('Error al obtener asignaciones de cuartos:', err));
-  }
-};
-
-  useEffect(() => {
-    if (groupData) {
-      fetchDayOptions();
-    }
-  }, [groupData]);
-
-  useEffect(() => {
-    // Cada vez que cambia la ciudad seleccionada, actualizamos la tabla de cuartos
-    if (selectedCity) {
-      fetchRoomAssignments();
-    }
-  }, [selectedCity, dayOptions]);
-
-  
-  const handleEditRoom = (assignment) => {
-    // Función para convertir la fecha de "DD/MM" a "YYYY-MM-DD"
-    const formatDateToISO = (dateStr, year) => {
-      const [day, month] = dateStr.split('/');
-      return `${year}-${month}-${day}`;
-    };
-
-    // Supongamos que assignment.date tiene el formato "DD/MM" y necesitas agregar el año
-    const year = new Date().getFullYear(); // Puedes ajustar esto según sea necesario
-    const formattedDate = formatDateToISO(assignment.date, year);
-    
-    // Asumiendo que assignment tiene, entre otros, "city" y "date"
-    // Llama al endpoint para obtener los hoteles disponibles para esa ciudad y fecha
-    fetch(`${process.env.REACT_APP_API_URL}/hotels_reservation/get_by_group_and_date?id_group=${groupData.id_group}&date_day=${formattedDate}`)
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setAvailableHotels(data); 
-        } else {
-          setAvailableHotels([]);
-        }
-      })
-      .catch(err => {
-        console.error('Error al obtener hoteles disponibles:', err);
-        setAvailableHotels([]);
-      });
-    
-    setRoomModalData(assignment);
-    setShowRoomModal(true);
-
-    fetch(`${process.env.REACT_APP_API_URL}/rooms/city?id_days=${assignment.id_days}`)
-      .then(res => res.json())
-      .then(data => {
-        console.log('Ciudades disponibles:', data);
-        setAvailableCity(data);
-      })
-      .catch(err => console.error('Error al obtener Ciudades disponibles:', err));
-
-    fetch(`${process.env.REACT_APP_API_URL}/rooms/room?id_days=${assignment.id_days}`)
-      .then(res => res.json())
-      .then(data => {
-        console.log('Habitaciones disponibles:', data);
-        setAvailableRooms(data);
-      })
-      .catch(err => console.error('Error al obtener Hbitaciones disponibles:', err));
-  };
 
   // Abre el modal intermedio de opciones (Editar, Agregar, Borrar) para un cliente en un día específico
   const handleOptionModal = (client, dayId, cityInfo, cityDays, optional = null) => {
@@ -331,41 +216,20 @@ const fetchRoomAssignments = () => {
     navigate(`/grupo/${groupData.id_group}?table=${activeTab}&filters=${filtersParam}`);
   };
 
-  const handleApplyHotelFilters = (filters) => {
-    const filtersParam = encodeURIComponent(JSON.stringify(filters));
-    navigate(`/grupo/${groupData.id_group}?table=hoteles&filters=${filtersParam}`);
-  };
-
   // Ejemplo de callback para abrir el modal de agregar otro hotel:
   const handleOpenHotelAddAnother = (assignmentData) => {
+    // Aquí assignmentData puede provenir de la edición actual; se usará para precargar ciudad, fecha, id_group, etc.
     console.log('Datos de la asignación actual:', assignmentData);
-    // Si el modal no está abierto, reiniciamos; de lo contrario, acumulamos
-    setHotelAddAnotherInitialData((prev) => {
-      if (!showHotelAddAnotherModal) {
-        return {
-          city: assignmentData.city,
-          date: assignmentData.date,
-          id_group: groupData.id_group,
-          new_pax: Number(assignmentData.new_pax || 0),
-          id_day: assignmentData.id_day,
-        };
-      } else {
-        return {
-          city: assignmentData.city,
-          date: assignmentData.date,
-          id_group: groupData.id_group,
-          new_pax: Number(assignmentData.paxAssigned  || 0),
-          id_day: assignmentData.id_day,
-        };
-      }
+    setHotelAddAnotherInitialData({
+      city: assignmentData.city,
+      date: assignmentData.date,
+      id_group: groupData.id_group,
+      new_pax: assignmentData.new_pax,
+      id_day: assignmentData.id_day
+      // Se pueden agregar otros campos si es necesario.
     });
-    // O, alternativamente, forzar el reinicio cuando se cierra el modal
+    console.log('Datos iniciales para agregar otro hotel:', hotelAddAnotherInitialData);
     setShowHotelAddAnotherModal(true);
-  };
-
-  const handleCloseHotelAddAnother = () => {
-    setShowHotelAddAnotherModal(false);
-    setHotelAddAnotherInitialData({});
   };
 
 
@@ -398,27 +262,121 @@ const fetchRoomAssignments = () => {
         </Col>
       </Row>
 
-      {/* Sección Superior: Información General, Itinerario y Contacto */}
+      {/* Sección de Información General */}
       <Row className="mt-3">
         <Col md={3}>
-          <InfoGeneral 
-            groupData={groupData} 
-            onEditGuide={() => {setShowEditGuideModal(true)}} 
-            onEditBus={() => {setShowEditBusModal(true)}} 
-            onEditQR={() => {setShowEditQRModal(true)}} 
-          />
+          <Card style={{ backgroundColor: '#BDD8F1', borderRadius: '10px' }}>
+            <Card.Body className="p-2">
+              <h5>Información General</h5>
+              <Row>
+                <Col>
+                  <p><strong>ID Grupo:</strong> {groupData.id_group}</p>
+                  <p>
+                    <strong>Guía:</strong>{' '}
+                    <span id="guideName">{groupData.guide_name || 'No asignado'}</span>
+                    <Link className="ms-2 edit-icon" onClick={() => setShowEditGuideModal(true)} to="#">
+                      <i className="fas fa-edit"></i>
+                    </Link>
+                  </p>
+                  <p>
+                    <strong>Bus:</strong>{' '}
+                    <span id="busInfo">
+                      {groupData.bus_company || 'No asignado'} {groupData.bus_code ? ' - ' + groupData.bus_code : ''}
+                    </span>
+                    <Link className="ms-2 edit-icon" onClick={() => setShowEditBusModal(true)} to="#">
+                      <i className="fas fa-edit"></i>
+                    </Link>
+                  </p>
+                </Col>
+                <Col>
+                  <p>
+                    <strong>Status:</strong>{' '}
+                    <Badge pill bg="success" style={{ fontSize: '1rem', padding: '5px', marginLeft: '8px'}}>
+                      {groupData.status.charAt(0).toUpperCase() + groupData.status.slice(1)}
+                    </Badge>
+                  </p>
+                  <p>
+                    <strong>QR:</strong>{' '}
+                    <span id="qrStatus">{groupData.QR ? 'Sí' : 'No'}</span>
+                    <Link className="ms-2 edit-icon" onClick={() => setShowEditQRModal(true)} to="#">
+                      <i className="fas fa-edit"></i>
+                    </Link>
+                  </p>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
         </Col>
+
+        {/* Sección de Itinerario */}
         <Col md={5}>
-          <ItinerarySection groupData={groupData} />
+          <Card style={{ backgroundColor: '#BDD8F1', borderRadius: '10px' }}>
+            <Card.Body className="p-2">
+              <h5>Itinerario</h5>
+              <Row>
+                <Col>
+                  <p><strong>Vuelo de Llegada:</strong> {groupData.start_flight || 'No asignado'}</p>
+                  <p>
+                    <strong>Fecha de Inicio:</strong>{' '}
+                    <span id="fechaInicio">{groupData.start_date}</span>
+                  </p>
+                  <p><strong>Ciudad Actual:</strong> {groupData.ciudad_actual || 'N/A'}</p>
+                </Col>
+                <Col>
+                  <p><strong>Vuelo de Regreso:</strong> {groupData.end_flight || 'No asignado'}</p>
+                  <p>
+                    <strong>Fecha de Regreso:</strong>{' '}
+                    <span id="fechaRegreso">{groupData.end_date}</span>
+                  </p>
+                  <p><strong>Hotel Actual:</strong> {groupData.hotel_actual || 'N/A'}</p>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
         </Col>
+
+        {/* Sección de Contacto y Mapa Mini */}
         <Col md={4}>
-          <ContactSection 
-            groupData={groupData} 
-            onEditOperations={() => {setShowEditOperationsAgentModal(true)}} 
-            onEditAssistant={() => {setShowEditAssistantModal(true)}} 
-            onEditResponsible={() => {setShowEditResponsibleHotelsModal(true)}} 
-            onOpenMap={() => {/* Lógica para abrir modal de mapa */}} 
-          />
+          <Card style={{ backgroundColor: '#BDD8F1', borderRadius: '10px' }}>
+            <Card.Body className="p-2">
+              <Row>
+                <Col xs={6}>
+                  <h5>Contacto</h5>
+                  <p>
+                    <strong>Operaciones:</strong>{' '}
+                    <span id="operationsAgentInfo">{groupData.operaciones_name || 'No asignado'}</span>
+                    <Link className="ms-2 edit-icon" onClick={() => setShowEditOperationsAgentModal(true)} to="#">
+                      <i className="fas fa-edit"></i>
+                    </Link>
+                  </p>
+                  <p>
+                    <strong>Asistente:</strong>{' '}
+                    <span id="assistantInfo">{groupData.nombre_asistente || 'No asignado'}</span>
+                    <Link className="ms-2 edit-icon" onClick={() => setShowEditAssistantModal(true)} to="#">
+                      <i className="fas fa-edit"></i>
+                    </Link>
+                  </p>
+                  <p>
+                    <strong>Responsable de Hoteles:</strong>{' '}
+                    <span id="responsibleHotelsInfo">{groupData.id_responsible_hotels || 'No asignado'}</span>
+                    <Link className="ms-2 edit-icon" onClick={() => setShowEditResponsibleHotelsModal(true)} to="#">
+                      <i className="fas fa-edit"></i>
+                    </Link>
+                  </p>
+                </Col>
+                <Col xs={6} className="d-flex align-items-start justify-content-center">
+                  <Link onClick={() => { /* Lógica para abrir modal de mapa */ }} to="#">
+                    <img
+                      src="/assets/images/mini_mapa.png"
+                      alt="Mapa"
+                      className="img-fluid mini-map-img"
+                      style={{ borderRadius: 0, maxWidth: '90%' }}
+                    />
+                  </Link>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
         </Col>
       </Row>
 
@@ -482,24 +440,7 @@ const fetchRoomAssignments = () => {
                 />
               </Tab.Pane>
               <Tab.Pane eventKey="cuartos">
-                <Row className="mb-3">
-                  <Col>
-                    <CitySubMenu 
-                      cities={Object.keys(dayOptions)}
-                      selectedCity={selectedCity}
-                      onSelectCity={setSelectedCity}
-                    />
-                  </Col>
-                </Row>
-                {/* Tabla de cuartos */}
-                <Row>
-                  <Col>
-                    <RoomsTable 
-                      roomAssignments={roomAssignments} 
-                      onEditAssignment={handleEditRoom}
-                    />
-                  </Col>
-                </Row>
+                <p>Contenido de cuartos no implementado aún.</p>
               </Tab.Pane>
               <Tab.Pane eventKey="opcionales">
                 <OptionalsSection
@@ -539,7 +480,6 @@ const fetchRoomAssignments = () => {
             bus_company: updatedBus.company_name,
             bus_code: updatedBus.bus_code
           });
-          fetchGroupData();
         }}
       />
       <EditQRModal
@@ -644,55 +584,29 @@ const fetchRoomAssignments = () => {
         />
         
       )}
-      {activeTab === 'hoteles' && (
-        <HotelFilterModal
-          show={showFilterModal}
-          idGroup={groupData.id_group}
-          onHide={() => setShowFilterModal(false)}
-          onApplyFilters={(filters) => {
-            const filtersParam = encodeURIComponent(JSON.stringify(filters));
-            navigate(`/grupo/${groupData.id_group}?table=${activeTab}&filters=${filtersParam}`);
-          }}
-        />
-      )}
-      {activeTab === 'cuartos' && (
-        <RoomFilterModal
-          show={showFilterModal}
-          onHide={() => setShowFilterModal(false)}
-          onApplyFilters={(filters) => {
-            const filtersParam = encodeURIComponent(JSON.stringify(filters));
-            navigate(`/grupo/${groupData.id_group}?table=cuartos&filters=${filtersParam}`);
-          }}
-          availableHotels={availableHotels}
-          availableCities={availableCity}
-          availableRoomTypes={availableRooms}
-        />
-      )
-      }
       <HotelModal
         show={showHotelModal}
         onHide={() => setShowHotelModal(false)}
         initialData={hotelInitialData || {}}
         groupPax={groupData.PAX}
         onSave={(payload) => {
-          return fetch(`${process.env.REACT_APP_API_URL}/hotels_reservation/update_hotel_reservation`, {
+          // Aquí se envía la solicitud PUT (o POST) al backend
+          fetch(`${process.env.REACT_APP_API_URL}/hotels_reservation/update_hotel_reservation`, {
             method: hotelInitialData?.assignment_id ? 'PUT' : 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           })
-            .then(async (response) => {
-              if (!response.ok) {
-                const errorData = await response.json();
-                // Lanza el error para que el modal lo capture y lo muestre
-                throw errorData;
-              }
-              return response.json();
-            })
-            .then((data) => {
+            .then(r => r.json())
+            .then(data => {
               if (data.status === 'success') {
                 fetchGroupData(); // Actualiza los datos del grupo
+              } else {
+                alert('Error al guardar la asignación: ' + data.message);
               }
-              return data;
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              alert('Error al guardar la asignación.');
             });
         }}
         onAddAnother={handleOpenHotelAddAnother}
@@ -700,13 +614,10 @@ const fetchRoomAssignments = () => {
       {/* Modal para Agregar Otro Hotel para el Mismo Día */}
       <HotelAddAnotherModal
         show={showHotelAddAnotherModal}
-        onHide={() => {
-          setShowHotelAddAnotherModal(false);
-          setHotelAddAnotherInitialData({}); // Reiniciamos si es necesario
-        }}
+        onHide={() => setShowHotelAddAnotherModal(false)}
         initialData={hotelAddAnotherInitialData}
         groupPax={groupData.PAX}
-        assignedPaxTotal={hotelAddAnotherInitialData.new_pax || 0}
+        assignedPaxTotal={hotelAddAnotherInitialData.new_pax}
         onSave={(payload) => {
           // Llamar al endpoint para agregar otra asignación para el mismo día.
           fetch(`${process.env.REACT_APP_API_URL}/hotels_reservation/asign_hotel_same_day`, {
@@ -721,7 +632,6 @@ const fetchRoomAssignments = () => {
               } else {
                 alert('Error al agregar asignación: ' + data.message);
               }
-              return data;
             })
             .catch(error => {
               console.error('Error:', error);
@@ -730,31 +640,6 @@ const fetchRoomAssignments = () => {
         }}
         onAddAnother={handleOpenHotelAddAnother}
         
-      />
-      <RoomAssignmentModal
-        show={showRoomModal}
-        onHide={() => setShowRoomModal(false)}
-        initialData={roomModalData || {}}
-        onSave={(payload) => {
-          // Aquí realizas la llamada al endpoint para guardar la modificación del cuarto.
-          return fetch(`${process.env.REACT_APP_API_URL}/hotels_room/update_client_room`, {
-            method: roomModalData?.id ? 'PUT' : 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          })
-            .then(res => res.json())
-            .then(data => {
-              if (data.status === 'success') {
-                fetchRoomAssignments(); // Actualiza la tabla de cuartos
-                return data;
-              } else if(data.status_code === 400) {
-                throw new Error(data.detail || 'Error al guardar la asignación');
-              } else {
-                throw new Error(data.message || 'Error al guardar la asignación');
-              }
-            });
-        }}
-        availableHotels={availableHotels}
       />
     </Container>
   );

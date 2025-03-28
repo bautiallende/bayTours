@@ -12,6 +12,7 @@ from app.models.optionals import Optionals
 async def create_one(db:AsyncSession, optional_purchase_data:OptionalPurchase):
     db.add(optional_purchase_data)
     db.commit()
+    print(f'\n\n Opcional creada: \n{optional_purchase_data}\n\n')
     return optional_purchase_data
 
 
@@ -19,12 +20,14 @@ async def create_one(db:AsyncSession, optional_purchase_data:OptionalPurchase):
 async def update_one(db:AsyncSession, optional_purchase_data:OptionalPurchase):
     db.commit()
     db.refresh(optional_purchase_data)
+    print(f'\n\n Opcional actualizada: \n{optional_purchase_data}\n\n')
     return optional_purchase_data
 
 
 async def delete(db:AsyncSession, optional_purchase_data:OptionalPurchase):
     db.delete(optional_purchase_data)
     db.commit()
+    print(f'\n\n Opcional eliminada: \n{optional_purchase_data}\n\n')
     return optional_purchase_data
 
 

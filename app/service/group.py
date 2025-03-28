@@ -2,7 +2,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .group_handler import groups_handlers
 import pandas as pd
 from app.crud import group as group_function
+from app.schemas.group import GroupCreate
 
+
+
+async def create(db:AsyncSession, group_data:GroupCreate, source:str):
+    handler = groups_handlers.get(source)
+    if handler:
+        response = await handler.create(db, group_data)
+    else:
+        response = None
+    return response
 
 async def new_group(db:AsyncSession, id_group:str, pax:int, circuit_name:str, flight_data: dict|None = None):
     handler = groups_handlers.get('new_group')
