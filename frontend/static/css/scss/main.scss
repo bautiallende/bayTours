@@ -1,0 +1,30 @@
+// Archivo: main.scss
+
+@use 'grupo_detalle';
+@use 'variables';
+@use 'header';
+@use 'sidebar';
+@use 'buttons';
+@use 'modals';
+@use 'tables';
+
+
+// Ajustamos el contenido principal
+.main-content {
+    margin-left: variables.$sidebar-width-collapsed; // Margen izquierdo cuando el menú está contraído
+    padding: 20px; // Espaciado interno del contenido
+    padding-top: 5px;
+    transition: margin-left variables.$transition-duration ease; // Transición suave al cambiar el margen
+}
+
+// Ajustamos el margen del contenido principal cuando el menú está expandido
+.sidebar:hover ~ .main-content {
+    margin-left: variables.$sidebar-width-expanded; // Margen izquierdo cuando el menú está expandido
+}
+
+// Estilos al pasar el cursor sobre los enlaces del menu
+.main-container {
+    margin-top: 70px;
+  }
+
+

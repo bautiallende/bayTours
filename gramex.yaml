@@ -1,0 +1,14 @@
+db:
+  default:
+    url: mysql+mysqlconnector://root:1234@localhost/turismo_db
+
+url:
+  home:
+    pattern: /
+    handler: FunctionHandler
+    kwargs:
+      function: index
+
+def index(handler):
+    return {'message': 'Hello from Gramex connected to MySQL!'}
+

@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+
+{% block title %}Grupos - Mi Aplicación{% endblock %}
+
+{% set current_sort_by = request.query_params.get('sort_by', '') %}
+{% set current_order = request.query_params.get('order', 'asc') %}
+
+{% macro sort_url(column) %}
+    {% set order = 'asc' %}
+    {% if current_sort_by == column %}
+        {% if current_order == 'asc' %}
+            {% set order = 'desc' %}
+        {% else %}
+            {% set order = 'asc' %}
+        {% endif %}
+    {% endif %}
+    {{ url_for('grupos') }}?sort_by={{ column }}&order={{ order }}{% for key, value in request.query_params.items() if key not in ['sort_by', 'order'] %}&{{ key }}={{ value }}{% endfor %}
+{% endmacro %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Botones en la parte superior -->
+    <div class="d-flex justify-content-end mb-3">
+        <!-- Botón de Filtro -->
+        <div class="dropdown me-2">
+            <button class="btn btn-custom me-2" type="button" data-bs-toggle="modal" data-bs-target="#filterModal">
+              <i class="fas fa-filter"></i> Filtro
+            </button>
+            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="filterButton">
+                <!-- Opciones de filtro -->
+                <a class="dropdown-item" href="#">Filtro 1</a>
+                <a class="dropdown-item" href="#">Filtro 2</a>
+                <a class="dropdown-item" href="#">Filtro 3</a>
+            </div>
+        </div>
+        <!-- Botón de Nueva Rooming List -->
+        <a href="/nueva_rooming_list" class="btn btn-custom me-2">
+            <i class="fas fa-plus"></i> Nueva Rooming List
+        </a>
+        <!-- Botón de Exportar Datos -->
+        <button type="button" class="btn btn-custom" id="exportButton" onclick="exportarDatos()">
+          <i class="fas fa-file-export"></i> Exportar Datos
+      </button>
+    </div>
+
+    <!-- Tabla de Grupos -->
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="thead-custom">
+                <tr>
+                  <th>
+                    <a href="{{ sort_url('id_grupo') }}">ID Grupo
+                      {% if current_sort_by == 'id_grupo' %}
+                        {% if current_order == 'asc' %}
+                          <i class="fas fa-sort-up"></i>
+                        {% else %}
+                          <i class="fas fa-sort-down"></i>
+                        {% endif %}
+                      {% endif %}
+                    </a>
+                  </th>
+                  <th>
+                    <a href="{{ sort_url('bus_company') }}">Compañía de Bus
+                      {% if current_sort_by == 'bus_company' %}
+                        {% if current_order == 'asc' %}
+                          <i class="fas fa-sort-up"></i>
+                        {% else %}
+                          <i class="fas fa-sort-down"></i>
+                        {% endif %}
+                      {% endif %}
+                    </a>
+                  </th>
+                  <th>
+                    <a href="{{ sort_url('guide_name') }}">Nombre del Guía
+                      {% if current_sort_by == 'guide_name' %}
+                        {% if current_order == 'asc' %}
+                          <i class="fas fa-sort-up"></i>
+                        {% else %}
+                          <i class="fas fa-sort-down"></i>
+                        {% endif %}
+                      {% endif %}
+                    </a>
+                  </th>
+                  <th>
+                    <a href="{{ sort_url('operaciones_name') }}">Operaciones
+                      {% if current_sort_by == 'operaciones_name' %}
+                        {% if current_order == 'asc' %}
+                          <i class="fas fa-sort-up"></i>
+                        {% else %}
+                          <i class="fas fa-sort-down"></i>
+                        {% endif %}
+                      {% endif %}
+                    </a>
+                  </th>
+                  <th>
+                    <a href="{{ sort_url('status') }}">Estado
+                      {% if current_sort_by == 'status' %}
+                        {% if current_order == 'asc' %}
+                          <i class="fas fa-sort-up"></i>
+                        {% else %}
+                          <i class="fas fa-sort-down"></i>
+                        {% endif %}
+                      {% endif %}
+                    </a>
+                  </th>
+                  <th>
+                    <a href="{{ sort_url('start_date') }}">Fecha de Inicio
+                      {% if current_sort_by == 'start_date' %}
+                        {% if current_order == 'asc' %}
+                          <i class="fas fa-sort-up"></i>
+                        {% else %}
+                          <i class="fas fa-sort-down"></i>
+                        {% endif %}
+                      {% endif %}
+                    </a>
+                  </th>
+                  <th>
+                    <a href="{{ sort_url('end_date') }}">Fecha de Fin
+                      {% if current_sort_by == 'end_date' %}
+                        {% if current_order == 'asc' %}
+                          <i class="fas fa-sort-up"></i>
+                        {% else %}
+                          <i class="fas fa-sort-down"></i>
+                        {% endif %}
+                      {% endif %}
+                    </a>
+                  </th>
+                  <th>
+                    <a href="{{ sort_url('nombre_asistente') }}">Asistente
+                      {% if current_sort_by == 'nombre_asistente' %}
+                        {% if current_order == 'asc' %}
+                          <i class="fas fa-sort-up"></i>
+                        {% else %}
+                          <i class="fas fa-sort-down"></i>
+                        {% endif %}
+                      {% endif %}
+                    </a>
+                  </th>
+                  <th>
+                    <a href="{{ sort_url('PAX') }}">PAX
+                      {% if current_sort_by == 'PAX' %}
+                        {% if current_order == 'asc' %}
+                          <i class="fas fa-sort-up"></i>
+                        {% else %}
+                          <i class="fas fa-sort-down"></i>
+                        {% endif %}
+                      {% endif %}
+                    </a>
+                  </th>
+                  <th><span>QR</span></th>
+                  <th>
+                    <a href="{{ sort_url('ciudad_actual') }}">Ciudad Actual
+                      {% if current_sort_by == 'ciudad_actual' %}
+                        {% if current_order == 'asc' %}
+                          <i class="fas fa-sort-up"></i>
+                        {% else %}
+                          <i class="fas fa-sort-down"></i>
+                        {% endif %}
+                      {% endif %}
+                    </a>
+                  </th>
+                  <th>
+                    <a href="{{ sort_url('hotel_actual') }}">Hotel Actual
+                      {% if current_sort_by == 'hotel_actual' %}
+                        {% if current_order == 'asc' %}
+                          <i class="fas fa-sort-up"></i>
+                        {% else %}
+                          <i class="fas fa-sort-down"></i>
+                        {% endif %}
+                      {% endif %}
+                    </a>
+                  </th>
+                    <!-- Añade más columnas si es necesario -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for grupo in grupos %}
+                <tr data-href="/grupo/{{ grupo.id_group }}">
+                    <td>{{ grupo.id_group }}</td>
+                    <td>{{ grupo.bus_company }}</td>
+                    <td>{{ grupo.guide_name }}</td>
+                    <td>{{ grupo.operaciones_name }}</td>
+                    <td>{{ grupo.status }}</td>
+                    <td>{{ grupo.start_date }}</td>
+                    <td>{{ grupo.end_date }}</td>
+                    <td>{{ grupo.nombre_asistente }}</td>
+                    <td>{{ grupo.PAX }}</td>
+                    <td>{{ grupo.QR }}</td>
+                    <td>{{ grupo.ciudad_actual }}</td>
+                    <td>{{ grupo.hotel_actual }}</td>
+                    <!-- Añade más celdas si es necesario -->
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="12">No se encontraron grupos.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal de Filtros -->
+<div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="filterForm" method="get" action="/grupos">
+        <div class="modal-header">
+          <h5 class="modal-title" id="filterModalLabel">Filtros</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Campos de Filtro en formato horizontal -->
+          <div class="container-fluid">
+            <div class="row">
+              <!-- Primera columna -->
+              <div class="col-md-6">
+                <!-- ID Grupo -->
+                <div class="form-group">
+                  <label for="id_grupo">ID Grupo</label>
+                  <input type="text" class="form-control" id="id_grupo" name="id_grupo" value="{{ filters.id_grupo | default('') }}">
+                </div>
+                <!-- Compañía de Bus -->
+                <div class="form-group">
+                  <label for="bus_company">Compañía de Bus</label>
+                  <select class="form-control" id="bus_company" name="bus_company">
+                    <option value="" {% if not filters.bus_company %}selected{% endif %}>Todas</option>
+                    {% for company in options.bus_companies %}
+                    <option value="{{ company }}" {% if filters.bus_company == company %}selected{% endif %}>{{ company }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <!-- Nombre del Guía -->
+                <div class="form-group">
+                  <label for="guide_name">Nombre del Guía</label>
+                  <select class="form-control" id="guide_name" name="guide_name">
+                    <option value="" {% if not filters.guide_name %}selected{% endif %}>Todos</option>
+                    {% for guide in options.guides %}
+                    <option value="{{ guide }}" {% if filters.guide_name == guide %}selected{% endif %}>{{ guide }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <!-- Operaciones -->
+                <div class="form-group">
+                  <label for="operaciones_name">Operaciones</label>
+                  <select class="form-control" id="operaciones_name" name="operaciones_name">
+                    <option value="" {% if not filters.operaciones_name %}selected{% endif %}>Todos</option>
+                    {% for op in options.operations %}
+                    <option value="{{ op }}" {% if filters.operaciones_name == op %}selected{% endif %}>{{ op }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <!-- Estado -->
+                <div class="form-group">
+                  <label for="status">Estado</label>
+                  <select class="form-control" id="status" name="status">
+                    <option value="" {% if not filters.status %}selected{% endif %}>Todos</option>
+                    {% for estado in options.statuses %}
+                    <option value="{{ estado }}" {% if filters.status == estado %}selected{% endif %}>{{ estado }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <!-- Segunda columna -->
+              <div class="col-md-6">
+                <!-- Fecha de Inicio -->
+                <div class="form-group">
+                  <label for="start_date">Fecha de Inicio</label>
+                  <input type="date" class="form-control" id="start_date" name="start_date" value="{{ filters.start_date | default('') }}">
+                </div>
+                <!-- Fecha de Fin -->
+                <div class="form-group">
+                  <label for="end_date">Fecha de Fin</label>
+                  <input type="date" class="form-control" id="end_date" name="end_date" value="{{ filters.end_date | default('') }}">
+                </div>
+                <!-- Asistente -->
+                <div class="form-group">
+                  <label for="assistant_name">Asistente</label>
+                  <select class="form-control" id="assistant_name" name="assistant_name">
+                    <option value="" {% if not filters.assistant_name %}selected{% endif %}>Todos</option>
+                    {% for asistente in options.assistants %}
+                    <option value="{{ asistente }}" {% if filters.assistant_name == asistente %}selected{% endif %}>{{ asistente }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <!-- QR -->
+                <div class="form-group">
+                  <label for="has_qr">QR</label><br>
+                  <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="has_qr" name="has_qr" value="True" {% if filters.has_qr == 'True' %}checked{% endif %}>
+                    <label class="custom-control-label" for="has_qr">Sí</label>
+                  </div>
+                </div>
+                <!-- Ciudad Actual -->
+                <div class="form-group">
+                  <label for="current_city">Ciudad Actual</label>
+                  <select class="form-control" id="current_city" name="current_city">
+                    <option value="" {% if not filters.current_city %}selected{% endif %}>Todas</option>
+                    {% for ciudad in options.cities %}
+                    <option value="{{ ciudad }}" {% if filters.current_city == ciudad %}selected{% endif %}>{{ ciudad }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <!-- Hotel Actual -->
+                <div class="form-group">
+                  <label for="current_hotel">Hotel Actual</label>
+                  <select class="form-control" id="current_hotel" name="current_hotel">
+                    <option value="" {% if not filters.current_hotel %}selected{% endif %}>Todos</option>
+                    {% for hotel in options.hotels %}
+                    <option value="{{ hotel }}" {% if filters.current_hotel == hotel %}selected{% endif %}>{{ hotel }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <a href="/grupos" class="btn btn-secondary">Limpiar Filtros</a>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            <button type="submit" class="btn btn-custom">Aplicar Filtros</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="{{ url_for('static', path='js/grupos.js') }}" defer></script>
+
+{% endblock %}
