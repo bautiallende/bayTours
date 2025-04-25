@@ -6,3 +6,4 @@ venv/Lib/site-packages/
 app/__pycache__/__init__.cpython-312.pyc
 app/__pycache__/
 frontend_2.0/baytours-react/node_modules/
+frontend_2.0/
