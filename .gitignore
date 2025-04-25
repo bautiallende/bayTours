@@ -2,7 +2,24 @@
 # Entornos virtuales y dependencias
 # ================================
 # Virtualenv
+# ================================
+# Entornos virtuales y dependencias
+# ================================
+# Virtualenv
 venv/
+env/
+ENV/
+.venv/
+__pypackages__/
+
+# Pip metadata
+pip-wheel-metadata/
+*.egg-info/
+
+# ================================
+# Caché y archivos compilados
+# ================================
+# Byte-compiled / Python cache
 env/
 ENV/
 .venv/
