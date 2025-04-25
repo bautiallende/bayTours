@@ -1,7 +1,117 @@
+# ================================
+# Entornos virtuales y dependencias
+# ================================
+# Virtualenv
 venv/
+env/
+ENV/
+.venv/
+__pypackages__/
+
+# Pip metadata
+pip-wheel-metadata/
+*.egg-info/
+
+# ================================
+# Caché y archivos compilados
+# ================================
+# Byte-compiled / Python cache
 __pycache__/
-*.pyc
-"credentials.json" 
-frontend_2.0/
-app/__pycache__/
-venv/Lib/site-packages/
+*.py[cod]
+*$py.class
+
+# Pytest cache
+.pytest_cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+.cache
+
+# Cython debug symbols
+cython_debug/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# ================================
+# Archivos de distribución y build
+# ================================
+build/
+dist/
+*.egg
+*.whl
+
+# ================================
+# Logs y SQLite
+# ================================
+*.log
+*.sqlite3
+*.db
+*.bak
+
+# ================================
+# Variables de entorno y credenciales
+# ================================
+# Archivos sensibles
+credentials.json
+*.pem
+*.key
+.env
+.env.*
+secrets.yaml
+
+# ================================
+# Frontend / Node.js / React
+# ================================
+# Módulos de Node
+frontend_2.0/baytours-react/node_modules/
+frontend_2.0/node_modules/
+
+# Build outputs
+frontend_2.0/baytours-react/build/
+frontend_2.0/build/
+
+# Logs de npm/yarn
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ================================
+# IDEs y editores
+# ================================
+# VSCode
+.vscode/
+
+# JetBrains IDEs (PyCharm, IntelliJ…)
+.idea/
+*.iml
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ================================
+# Sistema operativo
+# ================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# ================================
+# Otros
+# ================================
+# Archivos temporales de sistema
+*.swp
+*.tmp
+
