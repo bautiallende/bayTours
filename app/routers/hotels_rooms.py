@@ -25,9 +25,6 @@ async def update_client_room(client_room_data: HotelRoomUpdate, db: Session = De
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.put('/update_all_rooms')
-async def update_all_rooms():
-    pass
 
 
 
@@ -39,5 +36,19 @@ async def get_hotels_room(id_hotel: int, db: Session = Depends(get_db)):
     try:
         hotel = await hotel_service.get_hotel_room(db=db, id_hotel=id_hotel)
         return {"status": "success", "data": hotel}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+
+@router.get('/get_rooms_type')
+async def get_rooms_type(db: Session = Depends(get_db)):
+    """
+    Endpoint para obtener los tipos de habitaciones disponibles.
+    """
+    try:
+        from app.crud.hotel import get_unique_hotel_room_types
+        rooms_type = await get_unique_hotel_room_types(db=db)
+        return {"status": "success", "data": rooms_type}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

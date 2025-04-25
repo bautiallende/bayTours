@@ -15,6 +15,12 @@ async def create_group(db:AsyncSession, group_data:ClientGroup):
     db.refresh(group_data)
     return group_data
 
+async def update_group(db:AsyncSession, group_data:ClientGroup):
+    db.add(group_data)
+    db.commit()
+    db.refresh(group_data)
+    return group_data
+
 
 
 async def get_grouped_client_data(db: AsyncSession, id_group:str, filters: dict = None):
@@ -38,7 +44,8 @@ async def get_grouped_client_data(db: AsyncSession, id_group:str, filters: dict 
             OptionalPurchase.place_of_purchase,
             OptionalPurchase.source,
             OptionalPurchase.payment_method,
-            Days.id
+            Days.id,
+            ClientGroup.pax_number
         ).join(
             ClientGroup, ClientGroup.id_clients == Clients.id_clients).join(
                 OptionalPurchase, OptionalPurchase.client_id == Clients.id_clients, isouter=True
@@ -48,7 +55,7 @@ async def get_grouped_client_data(db: AsyncSession, id_group:str, filters: dict 
                         Days, Activity.id_days == Days.id, isouter=True
                         ).join(
                             Optionals, OptionalPurchase.id_optionals == Optionals.id_optional, isouter=True
-                            ).where(ClientGroup.id_group == id_group)
+                            ).where(ClientGroup.id_group == id_group).order_by(ClientGroup.pax_number)
     
 
 
@@ -109,7 +116,7 @@ async def get_grouped_client_data(db: AsyncSession, id_group:str, filters: dict 
     
     for row in rows:
         client_key = (
-            row.paternal_surname, row.mother_surname, row.first_name,
+            row.pax_number, row.paternal_surname, row.mother_surname, row.first_name,
             row.second_name, row.birth_date, row.sex
         )
         
@@ -123,6 +130,7 @@ async def get_grouped_client_data(db: AsyncSession, id_group:str, filters: dict 
         if client_key not in clients_data:
             clients_data[client_key] = {
                 "id_clients": row.id_clients,
+                "pax_number": row.pax_number,
                 "paternal_surname": row.paternal_surname,
                 "mother_surname": row.mother_surname,
                 "first_name": row.first_name,
@@ -201,3 +209,14 @@ async def get_grouped_client_data(db: AsyncSession, id_group:str, filters: dict 
         "table_data": group_data,
         "itinerary": itinerary
     }
+
+
+
+async def get_client_group(db:AsyncSession, id_group:str):
+    result = db.execute(select(ClientGroup).where(ClientGroup.id_group == id_group))
+    return result.scalars().all()
+
+
+async def get_client_group_by_id_client(db:AsyncSession, id_clients:str):
+    result = db.execute(select(ClientGroup).where(ClientGroup.id_clients == id_clients))
+    return result.scalars().one()

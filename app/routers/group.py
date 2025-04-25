@@ -163,6 +163,10 @@ async def group_data(id_group:str , table:str, db: Session = Depends(get_db), fi
     return group_data
 
 
-# @router.get(f'/{id_group}/available_guides')
-# async def available_guides(db: Session = Depends(get_db)):
-#     pass
+@router.get('/get_possible_packages')
+async def get_possible_packages(id_group:str, db: Session = Depends(get_db)):
+    from app.crud.group import get_posible_packages
+    packages = await get_posible_packages(db=db, id_group=id_group)
+    if not packages:
+        raise HTTPException(status_code=404, detail="Group not found")
+    return packages

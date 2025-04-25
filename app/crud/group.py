@@ -15,6 +15,7 @@ from app.models.days import Days
 from app.models.circuits import Circuits
 from app.models.responsables_hotels import ResponsablesHotels
 from datetime import datetime
+from app.models.packages import Packages
 
 
 
@@ -198,7 +199,7 @@ async def get_tabla_group(db: AsyncSession, id_grupo: str = None, bus_company: s
             "PAX": group.PAX,
             "QR": group.QR,
             "ciudad_actual": city,
-            "hotel_actual": str(hotel_name), 
+            "hotel_actual": str(hotel_name) if hotel_name else '-', 
             "id_responsible_hotels":(group.nombre_responsable_hotels + ' ' + group.apellido_responsable_hotels) if group.nombre_responsable_hotels and group.apellido_responsable_hotels else group.nombre_responsable_hotels,
             "nombre_circuito": group.nombre_circuito,   
         })
@@ -252,3 +253,15 @@ async def get_filter_options(db: AsyncSession):
     result['statuses'] = [row.status for row in statuses.fetchall()]
 
     return result
+
+
+
+
+async def get_posible_packages(db: AsyncSession, id_group:str):
+    
+    query = select(Packages.package_number
+                   ).join(Group, Group.circuit == Packages.id_circuit
+                          ).group_by(Packages.package_number).filter(Group.id_group == id_group)
+    result = db.execute(query)
+
+    return result.scalars().all()

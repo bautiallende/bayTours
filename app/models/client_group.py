@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime
+from sqlalchemy import Column, Integer, String, Date, DateTime, Boolean
 from ..database import Base
 
 
@@ -12,3 +12,5 @@ class ClientGroup(Base):
     status = Column(String(255))
     packages = Column(String(255))
     room_type = Column(String(255))
+    shown = Column(Boolean, default=True)
+    pax_number = Column(Integer)

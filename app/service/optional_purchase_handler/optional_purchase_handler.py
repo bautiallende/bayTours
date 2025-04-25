@@ -13,18 +13,23 @@ from app.service import group as group_services
 
 class OptionalPurchaseHandler(BaseHandler):
 
-    async def create(self, db:AsyncSession, group_number:str, id_clientes:str, packages:str, circuit_name:str, age:int):
+    async def create(self, db:AsyncSession, group_number:str, id_clientes:str, packages:str, age:int, circuit_name:str = None, id_circuit:int = None):
         try:
-            circuit_data = await circuit_services.get_circuit_id(db=db, name=circuit_name)
+            if not circuit_name and not id_circuit:
+                return "No se ha proporcionado el nombre del circuito o el id del circuito"
+            
+            if circuit_name and not id_circuit:
+                circuit_data = await circuit_services.get_circuit_id(db=db, name=circuit_name)
+                id_circuit = circuit_data.id_circuit
 
-            print(f"Creating circuit: {circuit_data}")
-            print(f"Creating circuit: {circuit_data.id_circuit}")
-            print(f'package: {packages}')
+                print(f"Creating circuit: {circuit_data}")
+                print(f"Creating circuit: {circuit_data.id_circuit}")
+                print(f'package: {packages}')
 
             # configurar los paquetes de los clientes
             # con el numero de grupo y paquetes debemos buscar en la tabla de paquetes
             # cuales son lo que estan incluidos con el el tipo de paquetes y los registramos 
-            package_data = await search_package(db=db, id_circuit=circuit_data.id_circuit, packages=packages)
+            package_data = await search_package(db=db, id_circuit=id_circuit, packages=packages)
 
             for p in package_data:
                 print(f'package_data: \n{vars(p)}')
@@ -39,7 +44,8 @@ class OptionalPurchaseHandler(BaseHandler):
 
                 print(f'Optional data: \n{optional_data}\n')
                 print(f'activity_data: \n{activity_data}\n')
-
+                
+                price = None
                 if age:
                     if age >= 12:
                         price = optional_data.adult_price

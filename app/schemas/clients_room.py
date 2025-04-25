@@ -1,6 +1,7 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, date, time
+
 
 class HotelRoomCreate(BaseModel):
     pass
@@ -8,7 +9,8 @@ class HotelRoomCreate(BaseModel):
 class HotelRoomUpdate(BaseModel):
     id:str
     id_hotel_reservation: str
-    client_id: str
+    room_composition_id: str
+    id_days: str
     id_room: int
     room_number: str
     check_in_date: datetime
@@ -19,3 +21,7 @@ class HotelRoomUpdate(BaseModel):
     complement_currency: Optional[str]
     status: str
     comments: Optional[str]
+    separatedClients: Optional[List[str]]  = None
+    newClients: Optional[List[str]]  = None
+
+

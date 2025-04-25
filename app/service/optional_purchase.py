@@ -5,9 +5,9 @@ from app.crud import optional_purchase as optional_purchase_functions
 
 
 
-async def create_optional_purchase(db: AsyncSession, group_number:str, id_clientes:str, packages:str, circuit_name:str, age:int):
+async def create_optional_purchase(db: AsyncSession, group_number:str, id_clientes:str, packages:str, age:int, circuit_name:str = None, id_circuit:int = None):
     handler =  optionals_purchases_handlers.get('create_optional_purchase')
-    response = await handler(db=db, group_number=group_number, id_clientes=id_clientes, packages=packages, circuit_name=circuit_name, age=age)
+    response = await handler(db=db, group_number=group_number, id_clientes=id_clientes, packages=packages, circuit_name=circuit_name, age=age, id_circuit=id_circuit)
     return response
 
 

@@ -30,3 +30,14 @@ async def get_clents_group(id_group: str, db: Session = Depends(get_db)):
      if not response:
          raise HTTPException(status_code=404, detail="No clients found for this group")
      return response
+
+
+
+@router.put("/update_client")
+async def update_client(client_data: clients.ClientUpdate, db: Session = Depends(get_db)):
+    db_client = crud.clients.get_client(db=db, client_id=client_data.id_clients)
+    if not db_client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    
+    response = await clients_service.update_client(db=db, client_data=client_data)
+    return response

@@ -13,6 +13,7 @@ from app.service import guide as guide_service
 from app.service import transport as transport_services
 from app.service import hotel_reservation as hotel_reservation_service
 from app.service import clients as clients_services
+from app.crud import clients_room as clients_room_functions
 
 
 
@@ -169,7 +170,7 @@ class GroupsHandler(GroupHandler):
         print(f'grupos: {group_data}')
 
         if table == 'clientes':
-            table_data = await clients_services.get_clients_by_group_id(db=db, id_group=id_group)
+            table_data = await clients_services.get_clients_by_group_id(db=db, id_group=id_group, filters=filters)
             responde = {
                 "group_data":group_data, 
                 'table_data':table_data,
@@ -194,7 +195,7 @@ class GroupsHandler(GroupHandler):
                 'itinerary':None 
                 }   
         
-        elif table == '':
+        elif table == 'cuartos':
             pass
         
         elif table == '':
