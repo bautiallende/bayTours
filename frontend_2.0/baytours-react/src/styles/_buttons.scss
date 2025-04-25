@@ -1,0 +1,19 @@
+@use 'variables';
+
+// Estilos para los botones personalizados
+.btn-custom {
+  background-color: variables.$primary-color;
+  color: variables.$text-color;
+  border: none;
+}
+
+.btn-custom:hover {
+  background-color: variables.$primary-color-dark;
+  color: variables.$text-color;
+}
+
+// Botones secundarios (opcional)
+.btn-secondary {
+  background-color: #6c757d;
+  color: variables.$text-color;
+}

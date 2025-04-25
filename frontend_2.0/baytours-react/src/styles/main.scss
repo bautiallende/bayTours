@@ -1,0 +1,25 @@
+@use 'grupo_detalle';
+@use 'variables';
+@use 'header';
+@use 'sidebar';
+@use 'buttons';
+@use 'modals';
+@use 'tables';
+
+// Ajustamos el contenido principal
+.main-content {
+    margin-left: variables.$sidebar-width-collapsed; // Cuando el menú está contraído
+    padding: 20px;
+    padding-top: 5px;
+    transition: margin-left variables.$transition-duration ease;
+}
+
+// Cuando el menú está expandido (al pasar el cursor)
+.sidebar:hover ~ .main-content {
+    margin-left: variables.$sidebar-width-expanded;
+}
+
+// Ajustamos el contenedor principal
+.main-container {
+    margin-top: 70px;
+}
