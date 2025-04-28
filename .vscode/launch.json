@@ -19,7 +19,9 @@
         "args": ["app.main:app", "--reload"],
         "cwd": "${workspaceFolder}",
         "envFile": "${workspaceFolder}/.env",
-        "console": "integratedTerminal"
+        "console": "integratedTerminal",
+        "jinja": true
+
       }
     ]
   }
