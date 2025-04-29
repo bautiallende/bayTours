@@ -93,7 +93,7 @@ const OptionalRow = ({ client, itinerary, idGroup, currentDate, onAddOptional, o
     } else if (!expanded) {
       return (
         <div className="contracted-content">
-          <p>Sin opcionales</p>
+          <p>-</p>
         </div>
       );
     } else {
@@ -117,6 +117,7 @@ const OptionalRow = ({ client, itinerary, idGroup, currentDate, onAddOptional, o
   return (
     <>
       <tr className="clickable" onClick={toggleExpanded}>
+      <td>{client.pax_number}</td>
         <td>
           {[
             client.first_name,

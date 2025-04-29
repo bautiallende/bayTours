@@ -23,3 +23,12 @@ class Clients(ClientBase):
 
     class Config:
         from_attributes = True
+
+class ClientUpdate(ClientBase):
+    id_clients: str
+    shown: Optional[bool] = None
+    packages: Optional[str] = None
+    room_type: Optional[str] = None
+
+    class Config:
+        from_attributes = True

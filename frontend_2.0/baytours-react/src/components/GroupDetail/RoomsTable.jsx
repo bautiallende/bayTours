@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Table, Button } from 'react-bootstrap';
 
-// Función para calcular la edad a partir de la fecha de nacimiento
+// Calcula la edad a partir de la fecha de nacimiento
 const calculateAge = (birthDate) => {
   if (!birthDate) return '';
   const birth = new Date(birthDate);
@@ -11,6 +11,7 @@ const calculateAge = (birthDate) => {
   return Math.abs(ageDate.getUTCFullYear() - 1970);
 };
 
+// Obtiene el símbolo de la moneda
 const getCurrencySymbol = (currency) => {
   const currencySymbols = {
     USD: '$',
@@ -21,30 +22,30 @@ const getCurrencySymbol = (currency) => {
   return currencySymbols[currency] || '-';
 };
 
+// Mapeo de estados para traducirlos
 const statusMapping = {
   'New': 'Nuevo',
-  'Under review': 'En revision',
+  'Under review': 'En revisión',
   'Confirmed': 'Confirmado',
   'Provisional': 'Provisorio'
 };
 
 const RoomsTable = ({ roomAssignments, onEditAssignment }) => {
-  // Agrupar asignaciones por id_clients
-  const groups = roomAssignments.reduce((acc, assignment) => {
-    const clientId = assignment.id_clients; // Se asume que "id_clients" es el identificador único del cliente
-    if (!acc[clientId]) {
-      acc[clientId] = [];
+  // 1. Agrupar asignaciones por room_composition_id (o usar id de asignación si no existe)
+  const roomsMap = {};
+  roomAssignments.forEach((assignment) => {
+    const roomKey = assignment.room_composition_id || assignment.id;
+    if (!roomsMap[roomKey]) {
+      roomsMap[roomKey] = [];
     }
-    acc[clientId].push(assignment);
-    return acc;
-  }, {});
+    roomsMap[roomKey].push(assignment);
+  });
+  const roomGroups = Object.values(roomsMap);
 
-  // Convertir el objeto en un array de grupos
-  const groupedAssignments = Object.values(groups);
-
-  const getRowClass = (assignment) => {
-    switch (assignment.status) {
-      case 'New':
+  // Función para asignar clase según estado (para cada grupo se usará el estado del sample)
+  const getRowClass = (status) => {
+    switch (status) {
+      case 'new':
         return 'row-yellow';
       case 'Under review':
         return 'row-red';
@@ -65,7 +66,7 @@ const RoomsTable = ({ roomAssignments, onEditAssignment }) => {
           <th>Edad</th>
           <th>Sexo</th>
           <th>Pasaporte</th>
-          <th>Fecha</th>
+          <th>Fecha(s)</th>
           <th>Hotel</th>
           <th>Ciudad</th>
           <th>Tipo de Habitación</th>
@@ -81,47 +82,110 @@ const RoomsTable = ({ roomAssignments, onEditAssignment }) => {
         </tr>
       </thead>
       <tbody>
-        {groupedAssignments.length ? (
-          groupedAssignments.map((group) => {
-            const first = group[0];
-            const rowSpan = group.length;
-            const fullName = `${first.first_name || ''} ${first.second_name || ''} ${first.paternal_surname || ''} ${first.mother_surname || ''}`.trim();
-            const age = calculateAge(first.birth_date);
-            return group.map((assignment, index) => (
-              <tr key={`${assignment.id}-${index}`}  className={getRowClass(assignment)}>
-                {index === 0 && (
-                  <>
-                    <td rowSpan={rowSpan}>{fullName}</td>
-                    <td rowSpan={rowSpan}>{age}</td>
-                    <td rowSpan={rowSpan}>{assignment.sex || '-'}</td>
-                    <td rowSpan={rowSpan}>{assignment.passport || '-'}</td>
-                  </>
-                )}
-                {/* Para la columna Fecha, usamos el campo "date" */}
-                <td>{assignment.date ? assignment.date.split('T')[0] : '-'}</td>
-                <td>{assignment.hotel_name || '-'}</td>
-                <td>{assignment.city || '-'}</td>
-                <td>{assignment.type || '-'}</td>
-                <td>{assignment.room_number || '-'}</td>
-                <td>{`${getCurrencySymbol(assignment.currency)}${assignment.price || ''}`}</td>
-                <td>{`${getCurrencySymbol(assignment.supplements_currency)}${assignment.supplements || ''}`}</td>
-                <td>{assignment.supplements_currency || '-'}</td>
-                <td>{assignment.check_in_date ? assignment.check_in_date.split('T')[0] : '-'}</td>
-                <td>{assignment.departure_date ? assignment.departure_date.split('T')[0] : '-'}</td>
-                <td>{statusMapping[assignment.status] || assignment.status}</td>
-                <td>{assignment.comments || '-'}</td>
-                {/* En la columna de acciones, mostramos el botón sólo en la primera fila del grupo */}
-                <td>
-                    <Button variant="primary" size="sm" onClick={() => onEditAssignment(group[index])}>
-                      Editar
-                    </Button>
-                </td>
-              </tr>
-            ));
+        {roomGroups.length ? (
+          roomGroups.map((group, groupIndex) => {
+            // Datos comunes de la habitación (tomando el primer assignment)
+            const sample = group[0] || {};
+            const hotelName = sample.hotel_name || '-';
+            const city = sample.city || '-';
+            const roomType = sample.type || '-';
+            const roomNumber = sample.room_number || '-';
+            const currencySymbol = getCurrencySymbol(sample.currency);
+            const price = sample.price || '';
+            const supSymbol = getCurrencySymbol(sample.supplements_currency);
+            const supplements = sample.supplements || '';
+            const supCurrency = sample.supplements_currency || '-';
+            const checkIn = sample.check_in_date ? sample.check_in_date.split('T')[0] : '-';
+            const checkOut = sample.departure_date ? sample.departure_date.split('T')[0] : '-';
+            const statusText = statusMapping[sample.status] || sample.status;
+            const comments = sample.comments || '-'; 
+            // const comments =
+            //   Array.isArray(sample.comments) && sample.comments.length
+            //     ? sample.comments.join(', ')
+            //     : '-';
+
+            // Se calculan las fechas únicas para todo el grupo (celda combinada para "Fecha(s)")
+            const uniqueGroupDates = Array.from(
+              new Set(group.map((a) => (a.date ? a.date.split('T')[0] : '-')))
+            );
+
+            // Dentro del grupo, agrupar por cliente para evitar duplicados
+            const clientsMap = {};
+            group.forEach((asg) => {
+              const clientKey = asg.id_clients;
+              if (!clientsMap[clientKey]) {
+                clientsMap[clientKey] = [];
+              }
+              clientsMap[clientKey].push(asg);
+            });
+            const clientsArray = Object.values(clientsMap);
+            const totalClients = clientsArray.length;
+
+            // Se define un color de fondo alternado para cada grupo
+            const groupBackground = groupIndex % 2 === 0 ? "#ffffff" : "#f2f2f2";
+
+            return clientsArray.map((clientAssignments, clientIndex) => {
+              const refAsg = clientAssignments[0] || {};
+              const fullName = [refAsg.first_name, refAsg.second_name, refAsg.paternal_surname, refAsg.mother_surname]
+                .filter(Boolean)
+                .join(' ');
+              const age = calculateAge(refAsg.birth_date);
+              const sex = refAsg.sex || '-';
+              const passport = refAsg.passport || '-';
+
+              // Estilo para la fila: fondo según el grupo; si es la última fila del grupo, se agrega borde inferior
+              const rowStyle = { backgroundColor: groupBackground };
+              if (clientIndex === totalClients - 1) {
+                rowStyle.borderBottom = "2px solid #333";
+              }
+
+              return (
+                <tr
+                  key={`group-${groupIndex}-client-${clientIndex}`}
+                  className={getRowClass(sample.status)}
+                  style={rowStyle}
+                >
+                  {/* Datos personales */}
+                  <td>{fullName}</td>
+                  <td>{age}</td>
+                  <td>{sex}</td>
+                  <td>{passport}</td>
+                  {/* La columna Fecha(s) se muestra sólo en la primera fila del grupo */}
+                  {clientIndex === 0 && (
+                    <td rowSpan={totalClients}>
+                      {uniqueGroupDates.map((d, i) => (
+                        <div key={i}>{d}</div>
+                      ))}
+                    </td>
+                  )}
+                  {/* Columnas comunes a la habitación (solo en la primera fila del grupo) */}
+                  {clientIndex === 0 && (
+                    <>
+                      <td rowSpan={totalClients}>{hotelName}</td>
+                      <td rowSpan={totalClients}>{city}</td>
+                      <td rowSpan={totalClients}>{roomType}</td>
+                      <td rowSpan={totalClients}>{roomNumber}</td>
+                      <td rowSpan={totalClients}>{`${currencySymbol}${price}`}</td>
+                      <td rowSpan={totalClients}>{`${supSymbol}${supplements}`}</td>
+                      <td rowSpan={totalClients}>{supCurrency}</td>
+                      <td rowSpan={totalClients}>{checkIn}</td>
+                      <td rowSpan={totalClients}>{checkOut}</td>
+                      <td rowSpan={totalClients}>{statusText}</td>
+                      <td rowSpan={totalClients}>{comments}</td>
+                      <td rowSpan={totalClients}>
+                        <Button variant="primary" size="sm" onClick={() => onEditAssignment(sample)}>
+                          Editar
+                        </Button>
+                      </td>
+                    </>
+                  )}
+                </tr>
+              );
+            });
           })
         ) : (
           <tr>
-            <td colSpan="16" className="text-center">
+            <td colSpan="17" className="text-center">
               No hay asignaciones de cuartos.
             </td>
           </tr>

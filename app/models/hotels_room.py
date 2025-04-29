@@ -9,4 +9,5 @@ class HotelsRooms(Base):
     type = Column(String(255))
     price = Column(FLOAT)
     currency = Column(String(255))
+    pax = Column(Integer)
     

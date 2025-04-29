@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Modal, Button, Form, Row, Col } from 'react-bootstrap';
 
-const RoomFilterModal = ({ show, onHide, onApplyFilters, availableHotels, availableCities, availableRoomTypes }) => {
-    console.log('availableHotels', availableHotels);
-    console.log('availableCities', availableCities);
-    console.log('availableRoomTypes', availableRoomTypes);
+const RoomFilterModal = ({ show, onHide, onApplyFilters, availableHotels, availableCities, availableRoomTypes}) => {
+    console.log('availableHotels filter modal', availableHotels);
+    console.log('availableCities filter modal', availableCities);
+    console.log('availableRoomTypes filter modal', availableRoomTypes);
 
     // Estados para cada filtro
   const [passengers, setPassengers] = useState([]); // Si se requiere multiselección
@@ -112,11 +112,10 @@ const RoomFilterModal = ({ show, onHide, onApplyFilters, availableHotels, availa
               <Form.Group controlId="filterSex">
                 <Form.Label>Sexo</Form.Label>
                 <Form.Select value={sex} onChange={(e) => setSex(e.target.value)}>
-                  {sexOptions.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
+                  <option value="">Todos</option>
+                  <option value="M">Masculino</option>
+                  <option value="F">Femenino</option>
+                  <option value="O">Otro</option>
                 </Form.Select>
               </Form.Group>
             </Col>
@@ -165,13 +164,13 @@ const RoomFilterModal = ({ show, onHide, onApplyFilters, availableHotels, availa
             <Col md={6}>
               <Form.Group controlId="filterRoomType">
                 <Form.Label>Tipo de Habitación</Form.Label>
-                <Form.Select value={roomType} onChange={(e) => setRoomType(e.target.value)}>
-                  <option value="">Todos</option>
-                  {availableRoomTypes.map((rt) => (
-                    <option key={rt} value={rt}>
-                      {rt}
-                    </option>
-                  ))}
+                  <Form.Select value={roomType} onChange={(e) => setRoomType(e.target.value)}>
+                    <option value="">Todos</option>
+                    {availableRoomTypes.map((rt) => (
+                      <option key={rt} value={rt}>
+                        {rt}
+                      </option>
+                    ))}
                 </Form.Select>
               </Form.Group>
             </Col>

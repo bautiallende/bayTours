@@ -1,6 +1,17 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+from enum import Enum
+
+class HotelRoomType(str, Enum):
+    SGL = 'SGL'
+    DBL = 'DBL'
+    TWIN = 'TWIN'
+    DBL_C_MNR = 'DBL C/MNR'
+    TPL = 'TPL'
+    TPL_C_MNR = 'TPL C/MNR'
+
+
 
 class HotelBase(BaseModel):
     id_hotel: int

@@ -222,7 +222,7 @@ async def get_by_group(db:AsyncSession, id_group:str, filters:dict=None):
     return hotel_data
 
 
-async def get_hotel_by_group_and_day(db:AsyncSession, id_group:str, day_date:date):
+async def get_hotel_by_group_and_day(db:AsyncSession, id_group:str, city:str):
     
     query = (
         select(
@@ -249,10 +249,11 @@ async def get_hotel_by_group_and_day(db:AsyncSession, id_group:str, day_date:dat
             Days.day,
             Days.date
         )
-        .outerjoin(Days, HotelReservation.id_day == Days.id)
-        .outerjoin(Hotel, HotelReservation.id_hotel == Hotel.id_hotel)
+        .select_from(HotelReservation)
+        .join(Days, HotelReservation.id_day == Days.id)
+        .join(Hotel, HotelReservation.id_hotel == Hotel.id_hotel)
         .where(HotelReservation.id_group == id_group )
-        .where(Days.date == day_date)
+        .where(Days.city == city)
     )
 
     print(query)
@@ -264,4 +265,10 @@ async def get_hotel_by_group_and_day(db:AsyncSession, id_group:str, day_date:dat
     return rows
 
 
-
+async def get_reserved_by_group_day(db:AsyncSession, id_group:str, id_day:str):
+    query = db.execute(
+        select(HotelReservation).
+        where(HotelReservation.id_group == id_group).
+        where(HotelReservation.id_day == id_day)
+    )
+    return query.scalars().all()

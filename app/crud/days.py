@@ -38,3 +38,14 @@ async def get_day_id(db:AsyncSession, id_group:str ):
         city_days[row.city].append(row.id)
 
     return dict(city_days)
+
+async def get_day_by_id_days(db:AsyncSession, id_days:str):
+    result = db.execute(
+        select(Days).where(Days.id == id_days))
+    return result.scalars().first()
+
+
+async def get_day_by_group_and_city(db:AsyncSession, id_group:str, city:str):
+    result = db.execute(
+        select(Days).where(Days.id_group == id_group, Days.city == city))
+    return result.scalars().all()

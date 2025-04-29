@@ -65,6 +65,7 @@ const OptionalsSection = ({
       <Table responsive hover className="table">
         <thead className="thead-custom">
           <tr>
+            <th style={{ backgroundColor: '#BDD8F1' }}>PAX</th>
             <th style={{ backgroundColor: '#BDD8F1' }}>Nombre Completo</th>
             <th style={{ backgroundColor: '#BDD8F1' }}>Edad</th>
             <th style={{ backgroundColor: '#BDD8F1' }}>Sexo</th>

@@ -43,6 +43,12 @@ import DeleteOptionalModal from '../components/GroupDetail/modals/DeleteOptional
 import OptionModal from '../components/GroupDetail/modals/OptionModal';
 // ... otros modales que necesites
 
+// Modal para la seccion de clientes
+import EditClientModal from '../components/GroupDetail/modals/EditClientModal';
+import ClientsFilterModal from '../components/GroupDetail/modals/ClientsFilterModal';
+
+// Importar el componente de calendario
+import CalendarSection from '../components/GroupDetail/CalendarSection';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -120,7 +126,16 @@ const GroupDetail = () => {
   const [roomModalData, setRoomModalData] = useState(null);
   const [availableHotels, setAvailableHotels] = useState([]);
   const [availableCity, setAvailableCity] = useState([]);
-  const [availableRooms, setAvailableRooms] = useState([]);
+  const [availableRooms, setAvailableRooms] = useState([]); 
+
+  // Estados para la sección de clientes
+  const [showEditClientModal, setShowEditClientModal] = useState(false);
+  const [clientToEdit, setClientToEdit] = useState(null);
+  const handleEditClient = (client) => {
+    setClientToEdit(client);
+    setShowEditClientModal(true);
+  };
+  const [showClientsFilterModal, setShowClientsFilterModal] = useState(false);
   
   // --- Función para obtener datos del grupo ---
   const fetchGroupData = useCallback(() => {
@@ -137,6 +152,7 @@ const GroupDetail = () => {
         return response.json();
       })
       .then(data => {
+        console.log('Datos del grupo:', data);
         setGroupData(data.group_data);
         setTableData(data.table_data);
         setItinerary(data.itinerary || []);
@@ -155,6 +171,7 @@ const GroupDetail = () => {
   // --- Callbacks para manejar modales de opcionales ---
   // Función para obtener las opciones de días (submenú de ciudades)
 const fetchDayOptions = () => {
+  if (!groupData) return;
   fetch(`${process.env.REACT_APP_API_URL}/days/get_day_id?id_group=${groupData.id_group}`)
     .then(res => res.json())
     .then(data => {
@@ -168,40 +185,37 @@ const fetchDayOptions = () => {
     .catch(err => console.error('Error al obtener opciones de días:', err));
 };
 
-// Función para obtener asignaciones de cuartos según id_days
-const fetchRoomAssignments = () => {
-  if (selectedCity && dayOptions[selectedCity]) {
-    const id_days = dayOptions[selectedCity]; // Esto es un array de strings
-    fetch(`${process.env.REACT_APP_API_URL}/rooms/`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(id_days),
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setRoomAssignments(data);
-        }
-      })
-      .catch(err => console.error('Error al obtener asignaciones de cuartos:', err));
+useEffect(() => {
+  if (groupData) {
+    fetchDayOptions();
   }
-};
+}, [groupData]);
 
-  useEffect(() => {
-    if (groupData) {
-      fetchDayOptions();
-    }
-  }, [groupData]);
+// Función para obtener asignaciones de cuartos según id_days
+const fetchRoomAssignments = useCallback(() => {
+  if (!selectedCity || !dayOptions[selectedCity]) return;
+  const id_days_array = dayOptions[selectedCity];
+  let url = `${process.env.REACT_APP_API_URL}/rooms/`;
+  const params = new URLSearchParams({ });
+  if (filters) {
+    params.append('filters', filters);
+  }
+  fetch(`${url}?${params.toString()}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(id_days_array) })  
+    .then(res => res.json())
+    .then(data => { if (Array.isArray(data)) setRoomAssignments(data); })
+    .catch(err => console.error('Error al obtener asignaciones:', err));
+}, [selectedCity, dayOptions, filters]);
 
-  useEffect(() => {
-    // Cada vez que cambia la ciudad seleccionada, actualizamos la tabla de cuartos
-    if (selectedCity) {
-      fetchRoomAssignments();
-    }
-  }, [selectedCity, dayOptions]);
+useEffect(() => { fetchRoomAssignments(); }, [fetchRoomAssignments]);
+
+ // Derivar opciones de filtro
+ const filterHotels = Array.from(new Set(roomAssignments.map(a => a.hotel_name).filter(Boolean)));
+ const filterCities = Array.from(new Set(roomAssignments.map(a => a.city).filter(Boolean)));
+ const filterRoomTypes = Array.from(new Set(roomAssignments.map(a => a.type).filter(Boolean)));
 
   
   const handleEditRoom = (assignment) => {
+    console.log('Asignación de habitación seleccionada:', assignment);
     // Función para convertir la fecha de "DD/MM" a "YYYY-MM-DD"
     const formatDateToISO = (dateStr, year) => {
       const [day, month] = dateStr.split('/');
@@ -214,7 +228,7 @@ const fetchRoomAssignments = () => {
     
     // Asumiendo que assignment tiene, entre otros, "city" y "date"
     // Llama al endpoint para obtener los hoteles disponibles para esa ciudad y fecha
-    fetch(`${process.env.REACT_APP_API_URL}/hotels_reservation/get_by_group_and_date?id_group=${groupData.id_group}&date_day=${formattedDate}`)
+    fetch(`${process.env.REACT_APP_API_URL}/hotels_reservation/get_by_group_and_date?id_group=${groupData.id_group}&date_day=${assignment.id_days}`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -246,6 +260,37 @@ const fetchRoomAssignments = () => {
         setAvailableRooms(data);
       })
       .catch(err => console.error('Error al obtener Hbitaciones disponibles:', err));
+  };
+
+  const handleAutomaticAssignment = async () => {
+    if (!groupData || !groupData.id_group) {
+      alert("No se encontró el grupo.");
+      return;
+    }
+    // Se obtiene el arreglo de id_days para la ciudad seleccionada
+    const daysArray = dayOptions[selectedCity];
+    if (!daysArray || daysArray.length === 0) {
+      alert("No se encontraron días para la ciudad seleccionada.");
+      return;
+    }
+    const id_days = daysArray.join(',');
+    
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/rooms/update_all?id_group=${groupData.id_group}&id_days=${id_days}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.detail || 'Error en la asignación automática');
+      } else {
+        // Refrescar la tabla, por ejemplo:
+        fetchRoomAssignments();
+      }
+    } catch (error) {
+      console.error("Error en la asignación automática:", error);
+      alert("Error en la asignación automática");
+    }
   };
 
   // Abre el modal intermedio de opciones (Editar, Agregar, Borrar) para un cliente en un día específico
@@ -441,12 +486,17 @@ const fetchRoomAssignments = () => {
                 </Nav.Item>
                 <Nav.Item>
                   <Nav.Link eventKey="cuartos" as={Link} to={`/grupo/${id}?table=cuartos`}>
-                    Cuartos
+                    Habitaciones
                   </Nav.Link>
                 </Nav.Item>
                 <Nav.Item>
                   <Nav.Link eventKey="opcionales" as={Link} to={`/grupo/${id}?table=opcionales`}>
                     Opcionales
+                  </Nav.Link>
+                </Nav.Item>
+                <Nav.Item>
+                  <Nav.Link eventKey="calendario" as={Link} to={`/grupo/${id}?table=calendario`}>
+                    Calendario
                   </Nav.Link>
                 </Nav.Item>
                 <Nav.Item>
@@ -469,7 +519,9 @@ const fetchRoomAssignments = () => {
           <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k)} key={id}>
             <Tab.Content className="mt-3">
               <Tab.Pane eventKey="clientes">
-                <ClientsTable data={tableData} />
+                <ClientsTable data={tableData} 
+                onEditClient={handleEditClient}/>
+
               </Tab.Pane>
               <Tab.Pane eventKey="hoteles">
                 <HotelAssignmentsTable
@@ -490,12 +542,18 @@ const fetchRoomAssignments = () => {
                       onSelectCity={setSelectedCity}
                     />
                   </Col>
+             
+                  <Col xs="auto" className="d-flex align-items-center">
+                    <Button className="btn-custom me-2" onClick={handleAutomaticAssignment}>
+                      Asignación automática
+                    </Button>
+                  </Col>
                 </Row>
                 {/* Tabla de cuartos */}
                 <Row>
                   <Col>
                     <RoomsTable 
-                      roomAssignments={roomAssignments} 
+                      roomAssignments={roomAssignments}
                       onEditAssignment={handleEditRoom}
                     />
                   </Col>
@@ -511,6 +569,9 @@ const fetchRoomAssignments = () => {
                   onEditOptional={handleEditOptional}
                   onOptionModal={handleOptionModal}
                 />
+              </Tab.Pane>
+              <Tab.Pane eventKey="calendario">
+                <CalendarSection />
               </Tab.Pane>
               <Tab.Pane eventKey="liquidacion">
                 <p>Contenido de liquidación no implementado aún.</p>
@@ -631,6 +692,61 @@ const fetchRoomAssignments = () => {
         onEdit={handleOptionModalEdit}
         onDelete={handleOptionModalDelete}
       />
+      <EditClientModal 
+        show={showEditClientModal} 
+        onHide={() => setShowEditClientModal(false)} 
+        clientData={clientToEdit} 
+        groupId={groupData.id_group}
+        onSave={async (updated) => {
+          // Montamos el payload según tu spec
+          const payload = {
+            paternal_surname: updated.paternal_surname,
+            mother_surname: updated.mother_surname,
+            first_name: updated.first_name,
+            second_name: updated.second_name,
+            birth_date: updated.birth_date,               // "YYYY-MM-DD"
+            sex: updated.sex,
+            nationality: updated.nationality,
+            passport: updated.passport,
+            vtc_passport: new Date(updated.vtc_passport).toISOString(), // ISO completo
+            phone: updated.phone,
+            mail: updated.mail,
+            id_clients: clientToEdit.id_clients,           // tu ID
+            shown: updated.shown,
+            packages: updated.packages,
+            room_type: updated.room_type
+          };
+          const res = await fetch(`${process.env.REACT_APP_API_URL}/clients/update_client`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            // lanza para que el modal lo muestre
+            throw new Error(data.detail || 'Error al actualizar cliente');
+          }
+          // Refresca tus datos de grupo para que la tabla se actualice
+          await fetchGroupData();
+          return data;
+        }}
+      />
+      {activeTab === 'clientes' && (
+        <ClientsFilterModal
+        show={showFilterModal}
+        onHide={() => setShowFilterModal(false)}
+        idGroup={groupData.id_group}
+        onApply={(filters) => {
+          const filtersParam = encodeURIComponent(JSON.stringify(filters));
+          navigate(`/grupo/${groupData.id_group}?table=${activeTab}&filters=${filtersParam}`);
+        }}
+        namesOptions={tableData.map(c => ({
+          value: `${c.id_clients}`,
+          label: `${c.first_name} ${c.paternal_surname}`,
+          }))}
+
+      />)}
+
       {activeTab === 'opcionales' && (
         <OptionalsFilterModal
           show={showFilterModal}
@@ -657,16 +773,13 @@ const fetchRoomAssignments = () => {
       )}
       {activeTab === 'cuartos' && (
         <RoomFilterModal
-          show={showFilterModal}
-          onHide={() => setShowFilterModal(false)}
-          onApplyFilters={(filters) => {
-            const filtersParam = encodeURIComponent(JSON.stringify(filters));
-            navigate(`/grupo/${groupData.id_group}?table=cuartos&filters=${filtersParam}`);
-          }}
-          availableHotels={availableHotels}
-          availableCities={availableCity}
-          availableRoomTypes={availableRooms}
-        />
+        show={showFilterModal}
+        onHide={() => setShowFilterModal(false)}
+        onApplyFilters={handleApplyFilter}
+        availableHotels={availableHotels}
+        availableCities={filterCities}
+        availableRoomTypes={filterRoomTypes}
+      />
       )
       }
       <HotelModal

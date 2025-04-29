@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime
+from sqlalchemy import Column, Integer, String, Date, DateTime, Boolean
 from ..database import Base
 
 class Clients(Base):
@@ -16,3 +16,4 @@ class Clients(Base):
     vtc_passport = Column(Date)
     phone = Column(String(255))
     mail = Column(String(255))
+    

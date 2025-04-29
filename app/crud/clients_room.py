@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 import json
+from sqlalchemy import func
 from sqlalchemy import and_
 from typing import List
 from sqlalchemy.exc import SQLAlchemyError
@@ -14,6 +15,7 @@ from app.models.clients import Clients
 from app.models.hotels_room import HotelsRooms
 from app.models.days import Days
 from app.models.hotel_reservation import HotelReservation
+from app.models.rooms_composition import RoomsComposition
 
 
 async def new_room(db:AsyncSession, client_room_data:ClientsRoom):
@@ -34,13 +36,14 @@ async def get_room_by_id_group_and_city(db:AsyncSession, id_days:List[str],  fil
         select(
             ClientsRoom.id,
             ClientsRoom.id_days,
-            ClientsRoom.room_number, 
-            ClientsRoom.check_in_date, 
-            ClientsRoom.departure_date, 
-            ClientsRoom.complement,
-            ClientsRoom.complement_currency,
-            ClientsRoom.status, 
-            ClientsRoom.comments,
+            ClientsRoom.room_composition_id,
+            RoomsComposition.room_number, 
+            RoomsComposition.check_in_date, 
+            RoomsComposition.departure_date, 
+            RoomsComposition.complement,
+            RoomsComposition.complement_currency,
+            RoomsComposition.status, 
+            RoomsComposition.comments,
             Clients.id_clients,
             Clients.paternal_surname, 
             Clients.mother_surname,
@@ -61,12 +64,14 @@ async def get_room_by_id_group_and_city(db:AsyncSession, id_days:List[str],  fil
             ).outerjoin(
                 Clients, ClientsRoom.client_id == Clients.id_clients
                 ).outerjoin(
-                    HotelsRooms, ClientsRoom.id_room == HotelsRooms.id_room
+                RoomsComposition, RoomsComposition.id == ClientsRoom.room_composition_id
+                ).outerjoin(
+                    HotelsRooms, RoomsComposition.id_room == HotelsRooms.id_room
                     ).outerjoin(
                         Hotel, HotelsRooms.id_hotel == Hotel.id_hotel
                         ).outerjoin(Days, Days.id == ClientsRoom.id_days
                                     ).outerjoin(HotelReservation, HotelReservation.id_day == ClientsRoom.id_days)
-                        .where(ClientsRoom.id_days.in_(id_days)).order_by(Days.date.asc()).order_by(Clients.mother_surname.asc())
+                        .where(ClientsRoom.id_days.in_(id_days)).order_by(Clients.passport.asc())
         )
     
     if filters:
@@ -107,17 +112,28 @@ async def get_room_by_id_group_and_city(db:AsyncSession, id_days:List[str],  fil
             query = query.filter(Hotel.city == filters['city'])
         
         if 'room_type' in filters and filters['room_type']:
-            query = query.filter(HotelsRooms.type == filters['room_type'])
+            value = filters["room_type"]
+            if isinstance(value, list):
+                query = query.filter(HotelsRooms.type.in_(value))
+            else:
+                query = query.filter(HotelsRooms.type == value)
         
         # TODO: aca terminar de corregir el mayor o menos rl precio
         if 'room_price' in filters and filters['room_price']:
-            query = query.filter(HotelsRooms.price <= filters['room_price'])
+            query = query.filter(RoomsComposition.price <= filters['room_price'])
         
         if 'complement' in filters and filters['complement']:
-            query = query.filter(ClientsRoom.complement <= filters['complement'])
+            query = query.filter(RoomsComposition.complement <= filters['complement'])
         
-        if 'status' in filters and filters['status']:
-            query = query.filter(ClientsRoom.status == filters['status'])
+        if 'status' in filters and filters['status'] and filters['status'] != 'Todos':
+            status_map = {
+                'Nuevo': 'New',
+                'Confirmado': 'Confirmed',
+                'En revisión': 'Under review',
+                'Provisorio': 'Provisional',    
+            }
+            print(f"status_map: {status_map.get(filters['status'])}")
+            query = query.filter(RoomsComposition.status == status_map.get(filters['status']))
 
 
     result = db.execute(query)
@@ -129,6 +145,7 @@ async def get_room_by_id_group_and_city(db:AsyncSession, id_days:List[str],  fil
     for row in rows:
         formatted_row = {
             "id": row.id,
+            'room_composition_id': row.room_composition_id,
             "id_days": row.id_days,
             'id_hotel_reservation': row.id_hotel_reservation,
             "room_number": row.room_number,
@@ -185,9 +202,102 @@ async def get_city_by_id(db:AsyncSession, id_day:str):
 
 
 async def get_room_by_id_day(db:AsyncSession, id_day:str):
-    query = select(ClientsRoom.id_room,
-                   HotelsRooms.type).join(ClientsRoom, 
-                       ClientsRoom.id_room == HotelsRooms.id_room).where(ClientsRoom.id_days == id_day).group_by(ClientsRoom.id_room)
+    query = select(RoomsComposition.id_room,
+                   HotelsRooms.type
+                   ).join(HotelsRooms, RoomsComposition.id_room == HotelsRooms.id_room
+                    ).join(ClientsRoom, RoomsComposition.id  == ClientsRoom.room_composition_id).where(ClientsRoom.id_days == id_day).group_by(RoomsComposition.id_room)
     result = db.execute(query)
     print(f'query: {result}')
     return result.fetchall()
+
+
+
+async def get_solo_clients(db: AsyncSession, id_days:str):
+    # Subquery que obtiene, para cada room_composition_id en el día, la cantidad de clientes
+    subquery = (
+        select(
+            ClientsRoom.room_composition_id,
+            func.count(ClientsRoom.client_id).label("client_count")
+        )
+        .where(ClientsRoom.id_days == id_days)
+        .group_by(ClientsRoom.room_composition_id)
+        .subquery()
+    )
+
+    query = (
+        select(
+            ClientsRoom.client_id,
+            Clients.paternal_surname, 
+            Clients.mother_surname,
+            Clients.first_name,
+            Clients.second_name,
+            Clients.birth_date,
+            Clients.sex,
+            Clients.passport
+        )
+        .select_from(ClientsRoom)
+        .join(Clients, ClientsRoom.client_id == Clients.id_clients)
+        .join(subquery, ClientsRoom.room_composition_id == subquery.c.room_composition_id)
+        .where(subquery.c.client_count == 1)
+        .where(ClientsRoom.id_days == id_days)
+    )
+    result = db.execute(query)
+    return result.fetchall()
+
+
+async def get_client_by_client_id_and_id_days(db:AsyncSession, client_id:str, id_days:str):
+    query = (
+        select(ClientsRoom)
+        .where(
+            and_(
+                ClientsRoom.client_id == client_id,
+                ClientsRoom.id_days == id_days
+            )
+        ))
+    result = db.execute(query)
+    return result.scalars().one()
+
+
+async def get_by_room_composition_id(db:AsyncSession, room_composition_id:str):
+    query = (
+        select(ClientsRoom).where(
+            ClientsRoom.room_composition_id == room_composition_id
+        ))
+    result = db.execute(query)
+    return result.scalars().all()
+
+
+async def get_room_composition_counts(db: AsyncSession, id_days: str):
+    query = (
+        select(
+            ClientsRoom.room_composition_id,
+            func.count(ClientsRoom.room_composition_id).label("count")
+        )
+        .where(ClientsRoom.id_days == id_days)
+        .group_by(ClientsRoom.room_composition_id)
+    )
+    result = await db.execute(query)
+    return result.all()
+
+
+async def get_by_id_days(db:AsyncSession, id_days:str, client_ids:list[str] = None):
+    if client_ids is None:
+        query = (
+            select(ClientsRoom).where(ClientsRoom.id_days == id_days).order_by(ClientsRoom.room_composition_id.asc()))
+    else:
+        query = (
+            select(ClientsRoom).where(and_(
+                ClientsRoom.id_days == id_days, ClientsRoom.client_id.in_(client_ids)
+            )).order_by(ClientsRoom.room_composition_id.asc()))
+    result = db.execute(query)
+    return result.scalars().all()
+    
+
+
+async def get_by_client_id(db:AsyncSession, client_id:str):
+    query = (
+        select(ClientsRoom).where(
+            ClientsRoom.client_id == client_id
+        ))
+    result = db.execute(query)
+    return result.scalars().all()

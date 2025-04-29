@@ -39,7 +39,7 @@ const ItinerarySection = ({ groupData }) => {
               <span id="fechaRegreso">{groupData.end_date}</span>
             </p>
             <p>
-              <strong>Hotel Actual:</strong> {groupData.hotel_actual || 'N/A'}
+              <strong>Hotel Actual:</strong> {groupData.hotel_actual || '-'}
             </p>
           </Col>
         </Row>
