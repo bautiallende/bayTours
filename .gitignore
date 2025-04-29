@@ -47,6 +47,7 @@ dist/
 .env
 .env.*
 credentials.json
+!credentials.json.example
 secrets.yaml
 *.pem
 *.key
@@ -57,6 +58,8 @@ secrets.yaml
 node_modules/
 frontend_2.0/baytours-react/build/
 frontend_2.0/build/
+frontend_2.0/baytours-react/.env
+!frontend_2.0/baytours-react/.env.example
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -64,7 +67,6 @@ yarn-error.log*
 # =================================
 # IDEs y editores
 # =================================
-.vscode/
 .idea/
 *.iml
 *.sublime-project
