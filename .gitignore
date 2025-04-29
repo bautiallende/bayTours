@@ -45,6 +45,7 @@ dist/
 # Variables de entorno y credenciales
 # =================================
 .env
+!frontend_2.0/baytours-react/.env
 .env.*
 credentials.json
 !credentials.json.example
