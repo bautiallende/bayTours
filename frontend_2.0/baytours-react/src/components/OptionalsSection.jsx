@@ -21,7 +21,7 @@ import '../styles/_grupo_detalle.scss';
  *  - onOptionModal: Callback para abrir el modal de opciones (para editar, agregar o borrar).
  */
 const OptionalsSection = ({
-  data,
+  data = [],
   itinerary = [],
   idGroup,
   currentDate = Date.now(),
@@ -29,7 +29,7 @@ const OptionalsSection = ({
   onEditOptional,
   onOptionModal,
 }) => {
-
+  
   // Genera las columnas del header a partir del itinerario
   const headerColumns = [];
   itinerary.forEach(cityInfo => {

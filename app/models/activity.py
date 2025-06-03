@@ -8,6 +8,7 @@ class Activity(Base):
     id_days = Column(String(255))
     date = Column(Date)
     time = Column(Time)
+    duration = Column(Time)
     id_optional = Column(Integer)
     id_local_guide = Column(Integer)
     comment = Column(String(255))

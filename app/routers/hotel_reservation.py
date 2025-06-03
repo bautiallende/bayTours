@@ -127,11 +127,11 @@ async def get_hotel_reservation(id_group: str, db: Session = Depends(get_db)):
 
 @router.get("/get_by_group_and_date") # funcion solo de pruebam eliminar(?) se va a usar para cuartos
 async def get_by_group_and_date(id_group:str, date_day:str, db: Session = Depends(get_db)):
-    from app.crud.hotel_reservation import get_hotel_by_group_and_day
+    from app.crud.hotel_reservation import get_hotel_by_group_and_city
     from app.crud.days import get_day_by_id_days
     city_data =  await get_day_by_id_days(db=db, id_days=date_day)
     city = city_data.city
-    response = await get_hotel_by_group_and_day(db=db, id_group=id_group, city=city)
+    response = await get_hotel_by_group_and_city(db=db, id_group=id_group, city=city)
     print("response", response)
     return response
 

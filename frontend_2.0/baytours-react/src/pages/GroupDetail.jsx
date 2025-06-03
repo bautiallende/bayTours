@@ -571,7 +571,10 @@ useEffect(() => { fetchRoomAssignments(); }, [fetchRoomAssignments]);
                 />
               </Tab.Pane>
               <Tab.Pane eventKey="calendario">
-                <CalendarSection />
+                <CalendarSection
+                  groupId={groupData.id_group}
+                  initialDate={groupData.start_date}
+                />
               </Tab.Pane>
               <Tab.Pane eventKey="liquidacion">
                 <p>Contenido de liquidación no implementado aún.</p>

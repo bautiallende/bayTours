@@ -198,8 +198,9 @@ class GroupsHandler(GroupHandler):
         elif table == 'cuartos':
             pass
         
-        elif table == '':
-            pass
+        elif table == 'calendario':
+            responde  = await client_group_functions.get_grouped_client_data(db=db, id_group=id_group, filters=filters) 
+            responde['group_data'] = group_data
         
         else:
             table_data = None

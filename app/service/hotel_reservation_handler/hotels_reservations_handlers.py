@@ -266,9 +266,10 @@ class HotelReservationHandler(HotelsReservationsHandlers):
             group_info = await group_service.get_group(db=db, id_group=hotel_data.id_group)
             day_info = await days_service.get_all(db=db, id_group=hotel_data.id_group)
 
-            for day in range(1, num_days):
+            for day in range(0, num_days):
 
                 current_date = hotel_data.start_date + timedelta(days=day)
+                print(f'current_date: {current_date}')
                 base_records = await hotel_reservation_funcions.get_hotel_by_group_and_day(db=db, id_group=hotel_data.id_group, day_date=current_date)
                 
                 total_pax_assigned = sum(int(base_record.PAX) for base_record in base_records if base_record.PAX is not None)
@@ -280,7 +281,8 @@ class HotelReservationHandler(HotelsReservationsHandlers):
 
                 if total_pax_assigned + hotel_data.pax > group_info.PAX:
                     print(f"La suma de PAX para los hoteles ({total_pax_assigned + hotel_data.pax}) supera el total del grupo ({group_info.PAX}).")
-                    return False
+                    continue
+                    #return False
                 
                 save = False
                 print(f'base_records: {base_records}')

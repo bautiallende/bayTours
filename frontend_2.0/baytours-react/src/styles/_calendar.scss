@@ -1,0 +1,61 @@
+@use 'variables';
+
+
+.fc-h-event .fc-event-main,
+.fc-v-event .fc-event-main {
+  color: #4064f1;
+}
+
+/* Ajuste de tamaño mínimo y padding en vista dayGrid */
+.fc .fc-daygrid-event {
+  min-height: 24px;
+  padding: 2px 4px;
+  font-size: 0.75rem;
+}
+
+/* Texto multilínea en titles de dayGrid */
+.fc .fc-daygrid-event .fc-event-title {
+  white-space: normal !important;
+}
+
+/* Texto multilínea y ajuste dinámico de altura en timeGrid */
+.fc .fc-timegrid-event .fc-event-main-frame,
+.fc .fc-timegrid-event .fc-event-main {
+  white-space: normal !important;
+  overflow: visible !important;
+  line-height: 1.2 !important;
+  height: auto !important;
+}
+
+/* Tu clase custom para darle más control a eventos */
+.fc-event-custom {
+  display: flex;
+  flex-direction: column;
+  white-space: normal;
+  font-size: 0.85em;
+}
+.fc-event-pax {
+  margin-top: 0.2em;
+  font-size: 0.75em;
+  color: #333;
+}
+
+/* Diferentes colores según tipo */
+// Ahora usamos las clases que inyecta `eventClassNames`
+.fc-type-hotel {
+  background-color: #DBFFCB;
+  z-index: 1; /* hoteles detrás */
+}
+.fc-type-optional {
+  background-color: #FFF1D5;
+  z-index: 2; /* opcionales por encima */
+}
+.fc-type-permit {
+  /* cuando lo implementemos */
+  background-color: #FFDCDC;
+  z-index: 2;
+}
+
+/* Si quieres controles más finos sobre el stacking, podrías usar: */
+.fc-type-hotel { z-index: 1 !important; }
+.fc-type-optional, .fc-type-permit { z-index: 2 !important; }

@@ -105,7 +105,9 @@ async def get_by_group(db:AsyncSession, id_group:str, filters:dict=None):
             HotelReservation.id_hotel, 
             HotelReservation.id_group, 
             HotelReservation.start_date, 
+            HotelReservation.hour_check_in,
             HotelReservation.end_date, 
+            HotelReservation.hour_check_out,
             HotelReservation.PAX, 
             HotelReservation.currency, 
             HotelReservation.total_to_pay, 
@@ -204,7 +206,9 @@ async def get_by_group(db:AsyncSession, id_group:str, filters:dict=None):
             'id_hotel': row.id_hotel,
             "hotel_name": row.hotel_name,
             "check_in": row.start_date.strftime("%d/%m") if row.start_date else '',
+            "hour_check_in": row.hour_check_in.strftime("%H:%M") if row.hour_check_in else '',
             "check_out": row.end_date.strftime("%d/%m") if row.end_date else '',
+            "hour_check_out": row.hour_check_out.strftime("%H:%M") if row.hour_check_out else '',
             'pax': row.PAX,
             "assigned_pax": pax_by_day[row.id_day],
             "rooming_list": row.rooming_list,
@@ -222,7 +226,7 @@ async def get_by_group(db:AsyncSession, id_group:str, filters:dict=None):
     return hotel_data
 
 
-async def get_hotel_by_group_and_day(db:AsyncSession, id_group:str, city:str):
+async def get_hotel_by_group_and_city(db:AsyncSession, id_group:str, city:str):
     
     query = (
         select(
@@ -254,6 +258,48 @@ async def get_hotel_by_group_and_day(db:AsyncSession, id_group:str, city:str):
         .join(Hotel, HotelReservation.id_hotel == Hotel.id_hotel)
         .where(HotelReservation.id_group == id_group )
         .where(Days.city == city)
+    )
+
+    print(query)
+
+    result = db.execute(query)
+    rows = result.fetchall()
+
+    print(f"result: {rows}")
+    return rows
+
+async def get_hotel_by_group_and_day(db:AsyncSession, id_group:str, day_date:date):
+    
+    query = (
+        select(
+            HotelReservation.id, 
+            HotelReservation.id_day,
+            HotelReservation.id_hotel, 
+            HotelReservation.id_group, 
+            HotelReservation.start_date, 
+            HotelReservation.end_date, 
+            HotelReservation.PAX, 
+            HotelReservation.currency, 
+            HotelReservation.total_to_pay, 
+            HotelReservation.comment, 
+            HotelReservation.updated_by, 
+            HotelReservation.rooming_list, 
+            HotelReservation.pro_forma, 
+            HotelReservation.payment_date, 
+            HotelReservation.payment_done_date, 
+            HotelReservation.payed_by,
+            HotelReservation.factura, 
+            HotelReservation.iga, 
+            Hotel.hotel_name,
+            Days.city,
+            Days.day,
+            Days.date
+        )
+        .select_from(HotelReservation)
+        .outerjoin(Days, HotelReservation.id_day == Days.id)
+        .outerjoin(Hotel, HotelReservation.id_hotel == Hotel.id_hotel)
+        .where(HotelReservation.id_group == id_group )
+        .where(Days.date == day_date)
     )
 
     print(query)

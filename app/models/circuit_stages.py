@@ -7,6 +7,6 @@ class CircuitStages(Base):
 
     id_stage = Column(Integer, primary_key=True, nullable=False)
     id_circuit = Column(Integer)
-    city_name = Column(String(255))
+    city_id      = Column(Integer)
     stage_order = Column(Integer)
     ferry = Column(Boolean)

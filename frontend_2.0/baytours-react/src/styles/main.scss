@@ -5,6 +5,7 @@
 @use 'buttons';
 @use 'modals';
 @use 'tables';
+@use 'calendar';
 
 // Ajustamos el contenido principal
 .main-content {
@@ -23,3 +24,5 @@
 .main-container {
     margin-top: 70px;
 }
+
+
