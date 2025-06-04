@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Date, DateTime, Time, Boolean
 from ..database import Base
 
-class Activity(Base):
+class Ferry(Base):
     __tablename__ = "ferry"
 
     ferry_id=  Column(Integer, primary_key=True)
