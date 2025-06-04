@@ -1,7 +1,7 @@
 from .activity import Activity
 from .assistant import Assistant
-from .circuit_stages import CircuitStages
-from .circuits import Circuits
+from .circuit_stages import CircuitStage
+from .circuits import Circuit
 from .cities import City
 from .client_group import ClientGroup
 from .clients_room import ClientsRoom
@@ -22,6 +22,7 @@ from .packages import Packages
 from .permit import Permit
 from .responsables_hotels import ResponsablesHotels
 from .rooms_composition import RoomsComposition
+from .stage_transports import StageTransport
 from .transport_company import TransportCompany
 from .transport import Transport
 
@@ -29,8 +30,8 @@ from .transport import Transport
 __all__ = [
     "Activity",
     "Assistant",
-    "CircuitStages",
-    "Circuits",
+    "CircuitStage",
+    "Circuit",
     "City",
     "ClientGroup",
     "ClientsRoom",
@@ -51,6 +52,7 @@ __all__ = [
     "Permit",
     "ResponsablesHotels",
     "RoomsComposition",
+    "StageTransport",
     "TransportCompany",
     "Transport"
 ]
