@@ -12,7 +12,7 @@ from app.models.hotel import Hotel
 from app.models.guides import Guides
 from app.models.hotel_reservation import HotelReservation
 from app.models.days import Days
-from app.models.circuits import Circuits
+from app.models.circuits import Circuit
 from app.models.responsables_hotels import ResponsablesHotels
 from datetime import datetime
 from app.models.packages import Packages
@@ -71,14 +71,14 @@ async def get_tabla_group(db: AsyncSession, id_grupo: str = None, bus_company: s
         Group.QR, 
         ResponsablesHotels.name.label('nombre_responsable_hotels'),
         ResponsablesHotels.surname.label('apellido_responsable_hotels'),
-        Circuits.name.label('nombre_circuito')
+        Circuit.name.label('nombre_circuito')
         ).join(Guides, Group.id_guide == Guides.id_guide, isouter=True
         ).join(Transport, Group.id_transport == Transport.id_transport, isouter=True
         ).join(TransportCompany, Transport.company_id == TransportCompany.company_id, isouter=True
         ).join(ResponsablesHotels, ResponsablesHotels.id_responsible_hotels == Group.id_responsible_hotels, isouter=True
         ).join(Operations, Group.id_operations == Operations.id_operation, isouter=True
         ).join(Assistant, Group.id_assistant == Assistant.id_assistant, isouter=True
-        ).join(Circuits, Group.circuit == Circuits.id_circuit, isouter=True
+        ).join(Circuit, Group.circuit == Circuit.id, isouter=True
                ).distinct(Group.id_group)
 
     print(f"valor del id_group: {id_grupo}")
@@ -136,6 +136,9 @@ async def get_tabla_group(db: AsyncSession, id_grupo: str = None, bus_company: s
         # Convertir start_date y end_date a formato 'date' para la comparación
         start_date = group.start_date if group.start_date else None
         end_date = group.end_date if group.end_date else None
+
+        start_date = start_date.date() if isinstance(start_date, datetime) else start_date
+        end_date = end_date.date() if isinstance(end_date, datetime) else end_date
 
         if current_date < start_date:
             # El tour no ha comenzado

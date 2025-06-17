@@ -1,24 +1,34 @@
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
+from datetime import datetime
 
 
 class CircuitBase(BaseModel):
-    name: str
-    description: Optional[str]
-    total_nights: int
+    """Campos comunes que comparten Create / Update / Read."""
+    name: str = Field(..., max_length=255)
+    description: str | None = Field(None, max_length=255)
+    total_nights: int = Field(..., gt=0)
+
+    model_config = ConfigDict(from_attributes=True)
 
 class CircuitCreate(CircuitBase):
-    pass
+    created_by: str = Field(..., max_length=250)
 
 class CircuitUpdate(BaseModel):
-    name: Optional[str]
-    description: Optional[str]
-    total_nights: Optional[int]
+    name: str | None = Field(None, max_length=255)
+    description: str | None = Field(None, max_length=255)
+    total_nights: int | None = Field(None, gt=0)
+    updated_by: str = Field(..., max_length=250)
+
+    model_config = ConfigDict(from_attributes=True)
 
 class CircuitRead(CircuitBase):
-    id_circuit: int
-    class Config:
-        from_attributes = True
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    updated_by: str | None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class StageBase(BaseModel):

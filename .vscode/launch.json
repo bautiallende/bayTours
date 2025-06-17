@@ -24,5 +24,5 @@
 
       }
     ],
-    "DATABASE_URL": "mysql+mysqlconnector://root:1234@localhost/turismo_db"
+    "DATABASE_URL": "mysql+mysqlconnector://root:1234@localhost/turismo_db_dev"
   }

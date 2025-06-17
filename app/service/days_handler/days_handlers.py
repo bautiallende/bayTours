@@ -21,7 +21,7 @@ class DaysHandler(BaseHandler):
         print(f"La diferencia es de {days_difference} días.")
 
         # Consultar las ciudades del circuito  (circuit_stage)
-        circuit_stages = await circuit_stages_service.get_circuit_stage(db=db, id_circuit=id_circuit)
+        circuit_stages = await circuit_stages_service.list_stages(db=db, circuit_id=id_circuit)
 
         current_date = arrival_date  # Fecha que usaremos para iterar
         stage_index = 0  # Índice para recorrer circuit_stages
@@ -37,16 +37,15 @@ class DaysHandler(BaseHandler):
             print(f'stage_index: {stage_index}, total_stages: {total_stages}')
             if stage_index < total_stages:
                 # Obtenemos la etapa del circuito correspondiente al índice actual
-                stage = circuit_stages[stage_index]
-                city = stage.city_name
-                ferry = bool(stage.ferry)  # Convertir a booleano
-
-                
+                stage = circuit_stages[stage_index] 
 
             else:
                 # Extender la estadía en la última ciudad si superamos el número de etapas del circuito
-                city = circuit_stages[-1].city_name
-                ferry = False  # Asumimos que no hay ferry en los días extendidos
+                stage = circuit_stages[-1] 
+            
+            print(stage)
+            city = stage.city_name
+            ferry = any(t.mode == "ferry" for t in stage.transports)
 
             # Crear el registro para el día en la tabla `days`
             day_entry = Days(

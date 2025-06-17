@@ -38,7 +38,10 @@ class CircuitStage(Base):
         nullable=False,
         index=True,
     )
-
+    city_name: Mapped[str] = mapped_column(
+        String(255), nullable=False, index=True
+    )  # Nombre de la ciudad para búsquedas rápidas
+    
     stage_order: Mapped[int] = mapped_column(Integer, nullable=False)
 
     # ─────────────────────────────────────────────── Metadatos de auditoría ──

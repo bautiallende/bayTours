@@ -6,6 +6,7 @@ from .cities import City
 from .client_group import ClientGroup
 from .clients_room import ClientsRoom
 from .clients import Clients
+from .drivers import Drivers
 from .days import Days
 from .ferry import Ferry
 from .group import Group
@@ -37,6 +38,7 @@ __all__ = [
     "ClientsRoom",
     "Clients",
     "Days",
+    "Drivers",
     "Ferry",
     "Group",
     "GuideAvailability",

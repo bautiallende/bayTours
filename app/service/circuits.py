@@ -1,28 +1,80 @@
+from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional
 from app.crud.circuit import (
-    get_circuit_by_id, get_circuits,
     create_circuit as crud_create,
+    get_circuit as crud_get,
+    list_circuits as crud_list,
     update_circuit as crud_update,
-    delete_circuit as crud_delete
+    delete_circuit as crud_delete,
+    get_circuit_id as get_circuit_id_crud,
 )
-from app.schemas.circuit import CircuitCreate, CircuitRead, CircuitUpdate
+from app.schemas.circuit import CircuitCreate, CircuitUpdate, CircuitRead
 
-async def create(db: AsyncSession, data: CircuitCreate) -> CircuitRead:
-    circuit = await crud_create(db, data)
-    return CircuitRead.model_validate(circuit)
 
-async def list(db: AsyncSession) -> List[CircuitRead]:
-    circuits = await get_circuits(db)
-    return [CircuitRead.model_validate(c) for c in circuits]
+# ────────────────────────────────────────────────────────────────
+# READ (single / list)
+# ────────────────────────────────────────────────────────────────
+async def get_circuit(db: AsyncSession, circuit_id: int) -> CircuitRead:
+    try:
+        circuit = await crud_get(db, circuit_id)
+    except NoResultFound:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Circuit not found.")
+    return CircuitRead.model_validate(circuit, from_attributes=True)
 
-async def get(db: AsyncSession, circuit_id: int) -> CircuitRead | None:
-    circuit = await get_circuit_by_id(db, circuit_id)
-    return CircuitRead.model_validate(circuit) if circuit else None
 
-async def update(db: AsyncSession, circuit_id: int, data: CircuitUpdate) -> CircuitRead | None:
-    circuit = await crud_update(db, circuit_id, data)
-    return CircuitRead.model_validate(circuit) if circuit else None
+async def get_circuit_id(db:AsyncSession, name:str):
+    result = await get_circuit_id_crud(db=db, name=name)
+    return result
 
-async def delete(db: AsyncSession, circuit_id: int) -> bool:
-    return await crud_delete(db, circuit_id)
+
+async def list_circuits(
+    db: AsyncSession,
+    skip: int = 0,
+    limit: int = 100,
+) -> list[CircuitRead]:
+    circuits = await crud_list(db, skip=skip, limit=limit)
+    return [CircuitRead.model_validate(c, from_attributes=True) for c in circuits]
+
+# ────────────────────────────────────────────────────────────────
+# CREATE
+# ────────────────────────────────────────────────────────────────
+async def create_circuit(db: AsyncSession, payload: CircuitCreate) -> CircuitRead:
+    try:
+        circuit = await crud_create(db, payload)
+    except IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Circuit name '{payload.name}' already exists.",
+        )
+    return CircuitRead.model_validate(circuit, from_attributes=True)
+
+
+
+# ────────────────────────────────────────────────────────────────
+# UPDATE
+# ────────────────────────────────────────────────────────────────
+async def update_circuit(
+    db: AsyncSession,
+    circuit_id: int,
+    payload: CircuitUpdate,
+) -> CircuitRead:
+    try:
+        circuit = await crud_update(db, circuit_id, payload)
+    except NoResultFound:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Circuit not found.")
+    except IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Circuit name '{payload.name}' already exists.",
+        )
+    return CircuitRead.model_validate(circuit, from_attributes=True)
+
+
+
+# ────────────────────────────────────────────────────────────────
+# DELETE
+# ────────────────────────────────────────────────────────────────
+async def delete_circuit(db: AsyncSession, circuit_id: int) -> None:
+    # Borrado idempotente: si el circuito no existe simplemente no pasa nada.
+    await crud_delete(db, circuit_id)

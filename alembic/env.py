@@ -41,7 +41,7 @@ target_metadata.naming_convention = NAMING_CONVENTION
 def get_url() -> str:
     return os.getenv(
         "DATABASE_URL",
-        "mysql+mysqlconnector://root:1234@localhost/turismo_db",  # valor por defecto
+        "mysql+mysqlconnector://root:1234@localhost/turismo_db_dev",  # valor por defecto
     )
 
 config.set_main_option("sqlalchemy.url", get_url())

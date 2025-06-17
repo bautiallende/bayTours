@@ -4,7 +4,7 @@ from ..database import Base
 class Clients(Base):
     __tablename__ = "clients"
     
-    id_clients = Column(Integer, primary_key=True, index=True)
+    id_clients = Column(String(255), primary_key=True, index=True)
     paternal_surname = Column(String(255))
     mother_surname = Column(String(255))
     first_name = Column(String(255))

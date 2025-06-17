@@ -6,6 +6,8 @@ env/
 ENV/
 .venv/
 __pypackages__/
+.env
+.vscode/
 
 # Metadatos de pip
 pip-wheel-metadata/
@@ -15,6 +17,8 @@ pip-wheel-metadata/
 # Caché y archivos compilados
 # =================================
 __pycache__/
+**/__pycache__/
+alembic/versions/__pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
@@ -24,6 +28,7 @@ htmlcov/
 .coverage.*
 .cache
 .ipynb_checkpoints/
+*.so
 
 # =================================
 # Builds y distribuciones

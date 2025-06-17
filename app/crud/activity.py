@@ -38,7 +38,9 @@ async def get_filters_by_group_id(db: AsyncSession, id_group:str, id_optional:in
             where(Days.id_group == id_group).order_by(Activity.date))
     
     activity_data = result.fetchall()
-    return activity_data
+
+
+    return [list(r) for r in activity_data] 
 
 
 async def get_calendar_activities(

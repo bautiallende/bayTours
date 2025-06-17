@@ -97,9 +97,13 @@ async def get_clients_by_group_id(db:AsyncSession, id_group: str, filters: dict 
 
 
    result = db.execute(query)
-   client = result.fetchall()
+   rows = [dict(r._mapping) for r in result]
 
-   return client
+   unique_rows = {}
+   for row in rows:
+      unique_rows[row["id_clients"]] = row  
+
+   return list(unique_rows.values())
 
 
 async def get_client_by_id(db:AsyncSession, id_client:int):

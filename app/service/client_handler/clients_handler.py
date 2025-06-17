@@ -86,6 +86,7 @@ class ClientsHandler(BaseHandler):
             if existing_client:
                 id_cliente = existing_client.id_clients
                 print(f"Cliente encontrado: {id_cliente}")
+                birth_date = existing_client.birth_date
                 
             
             else:

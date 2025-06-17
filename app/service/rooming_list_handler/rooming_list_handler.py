@@ -81,7 +81,7 @@ class RoomingListHandler(BaseHandler):
             "initial_flight": arrival_flight_number,
             "end_flight": departure_flight_number,
             "PAX": pax_total,
-            "circuit": circuit_data.id_circuit
+            "circuit": circuit_data.id
             })
         
         new_group = await group.create(db=db, group_data=group_data, source="rooming_list")

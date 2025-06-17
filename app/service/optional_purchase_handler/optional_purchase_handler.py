@@ -20,10 +20,10 @@ class OptionalPurchaseHandler(BaseHandler):
             
             if circuit_name and not id_circuit:
                 circuit_data = await circuit_services.get_circuit_id(db=db, name=circuit_name)
-                id_circuit = circuit_data.id_circuit
+                id_circuit = circuit_data.id
 
                 print(f"Creating circuit: {circuit_data}")
-                print(f"Creating circuit: {circuit_data.id_circuit}")
+                print(f"Creating circuit: {circuit_data.id}")
                 print(f'package: {packages}')
 
             # configurar los paquetes de los clientes

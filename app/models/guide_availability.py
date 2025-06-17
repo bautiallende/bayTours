@@ -8,6 +8,6 @@ class GuideAvailability(Base):
     id_guide = Column(Integer)
     start_date = Column(Date)
     end_date = Column(Date)
-    id_group = Column(String)
-    reason = Column(Date)
+    id_group = Column(String(255))
+    reason = Column(String(255))
     
