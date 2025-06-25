@@ -37,6 +37,7 @@ async def get_group_calendar(
         end=end,
         filters=filters_dict
     )
+    print(f'\n\n eventos: {events}\n\n')
     if not events:
         raise HTTPException(status_code=404, detail="No hay eventos para este grupo")
     return events

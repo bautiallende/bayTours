@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Date, DateTime, Boolean
+from sqlalchemy.orm import relationship
 from ..database import Base
 
 class Days(Base):
@@ -10,3 +11,10 @@ class Days(Base):
     date = Column(Date)
     city = Column(String(255))
     ferry = Column(Boolean)
+
+    transports = relationship(
+        "DayTransport",
+        back_populates="day",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )

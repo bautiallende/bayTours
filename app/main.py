@@ -19,7 +19,10 @@ from .routers import (
     permit, 
     circuits,
     circuit_stages, 
-    cities)
+    cities,
+    stage_transports, 
+    day_transports,
+    group_city_permits)
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
@@ -40,26 +43,29 @@ app.add_middleware(
 )
 
 
+app.include_router(upload.router)
 app.include_router(group.router)
 app.include_router(clients.router)
-app.include_router(upload.router)
+app.include_router(optionals_purchase.router)
+app.include_router(operations.router)
 app.include_router(hotel.router)
 app.include_router(guide.router)
 app.include_router(transport.router)
-app.include_router(operations.router)
 app.include_router(assistant.router)
 app.include_router(responsable_hotels.router)
-app.include_router(optionals_purchase.router)
 app.include_router(days.router)
 app.include_router(activity.router)
 app.include_router(hotel_reservation.router)
 app.include_router(rooms.router)
 app.include_router(hotels_rooms.router)
 app.include_router(calendar.router)
+app.include_router(cities.router)
 app.include_router(permit.router)
 app.include_router(circuits.router)
 app.include_router(circuit_stages.router)
-app.include_router(cities.router)
+app.include_router(stage_transports.router)
+app.include_router(day_transports.router)
+app.include_router(group_city_permits.router)
 
 
 @app.get("/")

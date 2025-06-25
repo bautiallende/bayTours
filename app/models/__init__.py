@@ -26,6 +26,8 @@ from .rooms_composition import RoomsComposition
 from .stage_transports import StageTransport
 from .transport_company import TransportCompany
 from .transport import Transport
+from .day_transports import DayTransport
+from .group_city_permits import GroupCityPermit
 
 
 __all__ = [
@@ -56,5 +58,7 @@ __all__ = [
     "RoomsComposition",
     "StageTransport",
     "TransportCompany",
-    "Transport"
+    "Transport",
+    "DayTransport",
+    "GroupCityPermit"
 ]

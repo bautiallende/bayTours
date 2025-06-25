@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, time
 from typing import List
 
 from pydantic import BaseModel, Field, ConfigDict
@@ -26,6 +26,8 @@ class StageTransportRead(StageTransportBase):
     created_at: datetime
     updated_at: datetime
     updated_by: str | None
+    depart_time: time | None
+
 
 
 # ────────────────────────────────────────────────────────────────

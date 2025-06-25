@@ -5,7 +5,8 @@ necesita ser gestionado (ferry, vuelo, tren, etc.). El bus regular que acompaña
 al grupo por defecto *no* se almacena aquí, evitando ruido en la tabla.
 """
 
-from datetime import datetime
+from datetime import datetime, time
+from sqlalchemy import Time
 
 from sqlalchemy import (
     Enum,
@@ -49,6 +50,7 @@ class StageTransport(Base):
     # Optional descriptive fields
     operator_name: Mapped[str | None] = mapped_column(String(255))
     transport_code: Mapped[str | None] = mapped_column(String(100))  # nº de vuelo, ferry, etc.
+    depart_time: Mapped[time | None] = mapped_column(Time(), nullable=True)
     notes: Mapped[str | None] = mapped_column(String(500))
 
     # Metadata

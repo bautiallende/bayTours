@@ -6,6 +6,8 @@ from datetime import timedelta, datetime
 from app.schemas.calendar import CalendarEvent
 from app.service import hotel_reservation as hotel_reservation_service
 from app.service import activity as activity_service
+from app.service import day_transports as day_transports_service
+from app.service import group_city_permits as permits_service
 
 
 async def get_group_calendar_events(
@@ -128,4 +130,49 @@ async def get_group_calendar_events(
     #             "processed": p.processed
     #         }
     #     ))
+
+    # 4. Metodos de transporte 
+
+    transport_rows = await day_transports_service.get_transports_by_id_group(db, id_group)
+    for t in transport_rows:
+        events.append(CalendarEvent(
+        id=str(t.id_transport),
+        type="transport",
+        title=str(t.mode.capitalize()) + " - " + str(t.operator_name),
+        start=t.departure_time.isoformat() if t.departure_time else '',
+        end=(t.departure_time + timedelta(hours=1)).isoformat() if t.departure_time else '',
+        color="#A0FA7C",
+        extendedProps={
+            "type": t.mode,
+            "company": t.operator_name,
+            "referenceCode": t.reference_code,
+            "comments": t.notes,
+            "departureTime": t.departure_time.isoformat() if t.departure_time else '',
+        }
+        ))
+    
+    # 5. Permisos de ciudad
+    city_permit_rows = await permits_service.list_permits_by_group(db, id_group)
+    for p in city_permit_rows:
+        print(f'\n\n\n {p} \n\n\n')
+        color = "#b85cb4" if p.status == "processed" else "#f09693"
+        events.append(CalendarEvent(
+            id=f"permit-{p.id_permit}",
+            type="permit",
+            title=f"Permiso {p.city.name} ({p.permit_number if p.permit_number else 'SIN PERMISO'})",
+            start=p.valid_from.isoformat(),
+            end=p.valid_to.isoformat(),
+            color=color,
+            extendedProps={
+                "city": p.city.name,
+                "status": p.status,
+                "permitNumber": p.permit_number,
+                "managedBy": p.managed_by,
+                "provider": p.provider,
+                "price": p.price,
+                "payedWith": p.payed_with,
+                "paymentDate": p.payment_date.isoformat() if p.payment_date else None,
+                "comments": p.comments
+            }
+        ))
     return events

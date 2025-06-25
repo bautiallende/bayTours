@@ -17,6 +17,7 @@ const CalendarSection = ({ groupId, initialDate }) => {
   const [showHotels, setShowHotels] = useState(true);
   const [showActivities, setShowActivities] = useState(true);
   const [showPermits, setShowPermits] = useState(true);
+  const [showTransport, setShowTransport] = useState(true);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(null);
 
@@ -46,6 +47,7 @@ const CalendarSection = ({ groupId, initialDate }) => {
           if (event.type === 'hotel' && !showHotels) return false;
           if (event.type === 'optional' && !showActivities) return false;
           if (event.type === 'permit' && !showPermits) return false;
+          if (event.type === 'transport' && !showTransport) return false;
           return true;
         });
         console.log('Filtered events:', filtered.map(e => ({ id: e.id, start: e.start })));
@@ -56,7 +58,7 @@ const CalendarSection = ({ groupId, initialDate }) => {
         setLoadError('No se pudieron cargar los eventos.');
         failureCallback(err);
       });
-  }, [groupId, showHotels, showActivities, showPermits]);
+  }, [groupId, showHotels, showActivities, showPermits, showTransport]);
 
   // Props base para FullCalendar
   const fcProps = {
@@ -117,6 +119,14 @@ const CalendarSection = ({ groupId, initialDate }) => {
               label="Permisos pendientes"
               checked={showPermits}
               onChange={() => setShowPermits(!showPermits)}
+            />
+          </Col>
+          <Col xs="auto">
+            <Form.Check
+              type="checkbox"
+              label="Metodos de transporte"
+              checked={showTransport}
+              onChange={() => setShowTransport(!showTransport)}
             />
           </Col>
         </Row>

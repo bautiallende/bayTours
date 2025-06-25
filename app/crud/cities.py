@@ -97,17 +97,25 @@ async def list_cities(db: AsyncSession, *, country: str | None = None) -> Sequen
     return list(result.scalars())
 
 
+async def get_city(db: AsyncSession, city_id: int) -> City:
+    """Get a city by its ID."""
+    result = db.execute(select(City).where(City.id == city_id))
+    
+    return result.scalar_one()
+
+
 async def update_city(db: AsyncSession, city_id: int, payload: CityUpdate) -> City:
     stmt = (
         update(City)
         .where(City.id == city_id)
         .values(**payload.model_dump(exclude_none=True), updated_at=datetime.utcnow())
-        .returning(City)
     )
-    result = db.execute(stmt)
-    db.commit()
-    city = result.scalar_one()
-    db.refresh(city)
+    db.execute(stmt)  # Ejecutar la consulta UPDATE
+    db.commit()  # Confirmar los cambios
+
+    # Recuperar los datos actualizados con un SELECT
+    result = db.execute(select(City).where(City.id == city_id))
+    city = result.scalar_one()  # Obtener la instancia actualizada
     return city
 
 
