@@ -22,7 +22,8 @@ from .routers import (
     cities,
     stage_transports, 
     day_transports,
-    group_city_permits)
+    group_city_permits,
+    local_guide)
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
@@ -66,6 +67,7 @@ app.include_router(circuit_stages.router)
 app.include_router(stage_transports.router)
 app.include_router(day_transports.router)
 app.include_router(group_city_permits.router)
+app.include_router(local_guide.router)
 
 
 @app.get("/")

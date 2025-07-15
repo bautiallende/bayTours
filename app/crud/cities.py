@@ -125,3 +125,12 @@ async def delete_city(db: AsyncSession, city_id: int) -> None:
         return
     db.delete(city)
     db.commit()
+
+
+async def get_city_id(db: AsyncSession, city:str) -> City | None:
+    """
+    Retrieve a city by its name, case-insensitive.
+    """
+    stmt = select(City).where(func.lower(City.name) == city.lower())
+    result = db.execute(stmt)
+    return result.scalar_one_or_none()

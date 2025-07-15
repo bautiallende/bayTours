@@ -117,9 +117,10 @@ class DaysHandler(BaseHandler):
                       id_days= id_days, 
                       date = current_date,
                       time = r.activity_time, 
-                      id_optional = r.id_optional,                      
+                      id_optional = r.id_optional,
+                      status_optional = 'pending',                      
                     )
-                  request = await activity_services.create(db=db, activity_data=activity_data)  
+                  request = await activity_services.create(db=db, activity_data=activity_data, source='auto')  
             
             if departure_date > current_date:
                 print(f'Departure date:{departure_date}, current_date:{current_date}')

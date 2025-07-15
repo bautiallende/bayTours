@@ -30,6 +30,7 @@ from .day_transports import DayTransport
 from .group_city_permits import GroupCityPermit
 
 
+
 __all__ = [
     "Activity",
     "Assistant",

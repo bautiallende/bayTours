@@ -90,31 +90,43 @@ async def get_group_calendar_events(
             end=end_dt.isoformat(),
             color="#DBFFCB",
             extendedProps={
-                "city": r['city'],
-                "pax": r['pax'],
-                "hotelId": r['id_hotel']
+                "Ciudad": r['city'],
+                "Pax": r['pax'],
+                "Check-in": r['hour_check_in'],
+                "Check-out": r['hour_check_out'],
+                "Comentarios": r['notes'],
+                "Direccion": r['address'],
+                "Telefono 1": r['phone_1'],
+                "Telefono 2": r['phone_2'],
+                "Mail 1": r['mail_1'],
+                "Mail 2": r['mail_2'],
             }
         ))
 
     # 2. Actividades opcionales
     opt_rows = await activity_service.get_calendar_data(db, id_group, start, end, filters)
     for o in opt_rows:
-        if not o.id or not o.title:
+        print(o)
+        if not o.get('id') or not o.get('title'):
             continue
         events.append(CalendarEvent(
-        id=o.id,
+        id=o.get('id'),
         type="optional",
-        title=o.title,
-        start=o.start.isoformat(),
-        end=o.end.isoformat(),
+        title=o.get('title'),
+        start=o.get('start').isoformat(),
+        end=o.get('end').isoformat(),
         color="#FFF1D5",
         extendedProps={
-            "city": o.city,
-            "guide": o.guide,
-            "comments": o.comments,
-            "clientsCount": o.pax
+            "Ciudad": o.get('city'),
+            "Horario":o.get('time', ''),
+            "Duracion": o.get('duration'),  
+            "Guia local": o.get('guide', ''),
+            "Pax": o.get('pax'),
+            "Comentarios": o.get('comments'),
+            "Numero de reserva": o.get('reservation_n')
         }
         ))
+   
     # 3. Permisos
     # perm_rows = await permits_service.get_calendar_data(db=db, id_group=id_group, start=start, end=end, filters=filters)
     # for p in perm_rows:
@@ -138,16 +150,16 @@ async def get_group_calendar_events(
         events.append(CalendarEvent(
         id=str(t.id_transport),
         type="transport",
-        title=str(t.mode.capitalize()) + " - " + str(t.operator_name),
+        title=str(t.mode.capitalize()) + " - " + str(t.operator_name) + " - " + str(t.reference_code),
         start=t.departure_time.isoformat() if t.departure_time else '',
         end=(t.departure_time + timedelta(hours=1)).isoformat() if t.departure_time else '',
         color="#A0FA7C",
         extendedProps={
-            "type": t.mode,
-            "company": t.operator_name,
-            "referenceCode": t.reference_code,
-            "comments": t.notes,
-            "departureTime": t.departure_time.isoformat() if t.departure_time else '',
+            "Metodo de transporte": t.mode.capitalize(),
+            "Proveedores": t.operator_name,
+            "Codigo de referencia": t.reference_code,
+            "Comentarios": t.notes,
+            "Horario de partida": t.departure_time.isoformat() if t.departure_time else '',
         }
         ))
     
@@ -155,24 +167,24 @@ async def get_group_calendar_events(
     city_permit_rows = await permits_service.list_permits_by_group(db, id_group)
     for p in city_permit_rows:
         print(f'\n\n\n {p} \n\n\n')
-        color = "#b85cb4" if p.status == "processed" else "#f09693"
+        color = "#e0c5e0" if p.status == "approved" else "#da89d7" #"#f09693"
         events.append(CalendarEvent(
-            id=f"permit-{p.id_permit}",
+            id=f"{p.id_permit}",
             type="permit",
             title=f"Permiso {p.city.name} ({p.permit_number if p.permit_number else 'SIN PERMISO'})",
             start=p.valid_from.isoformat(),
             end=p.valid_to.isoformat(),
             color=color,
             extendedProps={
-                "city": p.city.name,
-                "status": p.status,
-                "permitNumber": p.permit_number,
-                "managedBy": p.managed_by,
-                "provider": p.provider,
-                "price": p.price,
-                "payedWith": p.payed_with,
-                "paymentDate": p.payment_date.isoformat() if p.payment_date else None,
-                "comments": p.comments
+                "Ciudad": p.city.name,
+                "Estado": p.status,
+                "Numero de permiso": p.permit_number,
+                "Realizado por": p.managed_by,
+                "Proveedor": p.provider,
+                "Precio": p.price,
+                "Pagado con": p.payed_with,
+                "Fecha de pago": p.payment_date.isoformat() if p.payment_date else None,
+                "Comentarios": p.comments
             }
         ))
     return events

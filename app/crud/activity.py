@@ -1,8 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError, NoResultFound
 from app.models.activity import Activity
 from app.models.days import Days
 from app.models.optionals import Optionals
 from app.models.local_guides import LocalGuides
+from app.schemas.activity import ActivityUpdate
 from sqlalchemy.future import select
 from sqlalchemy import and_
 from typing import List, Optional
@@ -15,6 +17,52 @@ async def create(db: AsyncSession, activity_data: Activity):
     db.commit()
     return activity_data
 
+
+# ────────────────────────────────────────────────────────────────
+# UPDATE
+# ────────────────────────────────────────────────────────────────
+async def update_activity(
+    db: AsyncSession,
+    id_activity: str,
+    payload: ActivityUpdate,
+) -> Activity:
+    activity = await get_activity(db, id_activity)
+
+    # Usar model_dump para obtener solo los campos válidos
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        if field == "status_optional" and value is not None:
+            value = value.value
+        setattr(activity, field, value)
+
+    try:
+        db.commit()
+        db.refresh(activity)
+    except IntegrityError:
+        db.rollback()
+        raise
+
+    return activity
+
+
+# ────────────────────────────────────────────────────────────────
+# DELETE
+# ────────────────────────────────────────────────────────────────
+async def delete_activity(db: AsyncSession, id_activity: str) -> None:
+    activity = await get_activity(db, id_activity)
+    db.delete(activity)
+    db.commit()
+
+
+# ────────────────────────────────────────────────────────────────
+# GET por id  (útil para service y update)
+# ────────────────────────────────────────────────────────────────
+async def get_activity(db: AsyncSession, id_activity: str) -> Activity:
+    stmt = select(Activity).where(Activity.id == id_activity)
+    res = db.execute(stmt)
+    activity = res.scalar_one_or_none()
+    if activity is None:
+        raise NoResultFound
+    return activity
 
 async def get_by_group_id(db: AsyncSession, id_group:str, id_optional:int|None):
     if id_optional:
@@ -55,7 +103,7 @@ async def get_calendar_activities(
     aplicando filtros de grupo, rango de fechas y opcional si se indica.
     """
     stmt = (
-        select(Activity, Optionals.name.label("optional_name"), LocalGuides.name.label("local_guide"))
+        select(Activity, Optionals.name.label("optional_name"), LocalGuides.name.label("local_guide"), LocalGuides.surname.label("local_guide_surname"), Optionals.city)
         .join(Days, Days.id == Activity.id_days)
         .outerjoin(Optionals, Activity.id_optional == Optionals.id_optional)
         .outerjoin(LocalGuides, Activity.id_local_guide == LocalGuides.id_local_guide)

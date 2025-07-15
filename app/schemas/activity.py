@@ -1,83 +1,78 @@
 from __future__ import annotations
 
-from datetime import date, datetime
 from enum import Enum
+from datetime import date, time, datetime
+from typing import Optional
 
 from pydantic import BaseModel, Field, ConfigDict
 
 
 # ────────────────────────────────────────────────────────────────
-# ENUM del estado del permiso
+# ENUM del estado de la actividad opcional
 # ────────────────────────────────────────────────────────────────
-class PermitStatus(str, Enum):
+class StatusOptional(str, Enum):
     pending = "pending"
-    submitted = "submitted"
-    approved = "approved"
-    rejected = "rejected"
+    confirmed = "confirmed"
+    cancelled = "cancelled"
 
 
 # ────────────────────────────────────────────────────────────────
-# BASE – campos comunes a todos los modelos
+# BASE
 # ────────────────────────────────────────────────────────────────
-class GroupCityPermitBase(BaseModel):
-    id_permit: str | None 
-    id_group: str
-    id_city: int
-    id_transport: str
+class ActivityBase(BaseModel):
+    id_days: str = Field(..., description="FK al día (days.id)")
+    id_optional: int = Field(..., description="FK a optionals.id")
 
-    valid_from: date
-    valid_to: date
+    time: Optional[time] = None
+    duration: int | None = Field(None, ge=0, description="Duración en horas")
+    pax: int | None = Field(None, ge=0, alias="PAX")
+    reservation_n: str | None = Field(None, max_length=255)
+    comment: str | None = Field(None, max_length=500)
 
-    status: PermitStatus = PermitStatus.pending
+    status_optional: StatusOptional = StatusOptional.pending
 
-    permit_number: str | None = Field(None, max_length=255)
-    managed_by: str | None = Field(None, max_length=255)
-    provider: str | None = Field(None, max_length=255)
-    price: float | None = None
-    payed_with: str | None = Field(None, max_length=255)
-    payment_date: date | None = None
-    comments: str | None = Field(None, max_length=500)
+    id_local_guide: int | None = Field(
+        None, description="FK a local_guides.id_local_guide"
+    )
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 # ────────────────────────────────────────────────────────────────
-# CREATE – payload de entrada
-# (Operaciones podría crear uno “manual”; el sistema lo usará para auto-crear)
+# CREATE (POST)
 # ────────────────────────────────────────────────────────────────
-class GroupCityPermitCreate(GroupCityPermitBase):
+class ActivityCreate(ActivityBase):
+    created_by: str = Field(..., max_length=255)
+
+
+# ────────────────────────────────────────────────────────────────
+# UPDATE (PATCH)
+# ────────────────────────────────────────────────────────────────
+class ActivityUpdate(BaseModel):
+    id_days: str | None = Field(
+        None, description="Mover la actividad a otro día (FK days.id)"
+    )
+    id_optional: int 
+    time: Optional[time] = None
+    duration: int | None = Field(None, ge=0)
+    pax: int | None = Field(None, ge=0, alias="PAX")
+    reservation_n: str | None = Field(None, max_length=255)
+    comment: str | None = Field(None, max_length=500)
+    status_optional: StatusOptional | None = None
+    id_local_guide: int | None = None
     updated_by: str = Field(..., max_length=255)
 
-
-# ────────────────────────────────────────────────────────────────
-# UPDATE – payload parcial
-# ────────────────────────────────────────────────────────────────
-class GroupCityPermitUpdate(BaseModel):
-    valid_from: date | None = None
-    valid_to: date | None = None
-    status: PermitStatus | None = None
-
-    permit_number: str | None = Field(None, max_length=255)
-    managed_by: str | None = Field(None, max_length=255)
-    provider: str | None = Field(None, max_length=255)
-    price: float | None = None
-    payed_with: str | None = Field(None, max_length=255)
-    payment_date: date | None = None
-    comments: str | None = Field(None, max_length=500)
-
-    updated_by: str = Field(..., max_length=255)
-
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 # ────────────────────────────────────────────────────────────────
-# READ – respuesta hacia el front
+# READ (respuesta)
 # ────────────────────────────────────────────────────────────────
-class GroupCityPermitRead(GroupCityPermitBase):
-    id_permit: str
+class ActivityRead(ActivityBase):
+    id: str
+    date: date  # lo tomamos del Days relacionado
     created_at: datetime
     updated_at: datetime
     updated_by: str | None
-    city_name: str | None = None
 
     model_config = ConfigDict(from_attributes=True)

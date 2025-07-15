@@ -8,10 +8,26 @@ from app.schemas.calendar import CalendarActivity
 
 
 
-async def create(db:AsyncSession, activity_data: Activity):
-    handler = activity_handlers.get('create')
-    response = await handler(db=db, activity_data=activity_data)
+async def create(db:AsyncSession, activity_data: Activity, source: str = 'auto'):
+    handler = activity_handlers.get(source)
+    response = await handler.create(db=db, activity_data=activity_data)
     return response
+
+async def update(
+    db: AsyncSession,
+    id_activity: str,
+    activity_data: Activity,
+):
+    handler = activity_handlers.get('manual')     # sólo el manual permite updates
+    return await handler.update(db, id_activity, activity_data)
+
+
+async def delete(
+    db: AsyncSession,
+    id_activity: str,
+):
+    handler = activity_handlers.get('manual')
+    await handler.delete(db, id_activity)
 
 
 async def get_by_group_id(db:AsyncSession, id_group:str, id_optional:int=None):
@@ -41,25 +57,32 @@ async def get_calendar_data(db: AsyncSession, id_group: str, start: Optional[str
         id_optional=id_optional
     )
 
+    for row in rows:
+        print(f"Actividades obtenidas: {row[0].__dict__} - {row[1]} - {row[2]}")
     events: List[CalendarActivity] = []
-    for activity, optional_name, local_guide in rows:
+    for activity, optional_name, local_guide, local_guide_surname, city in rows:
         # construye el title usando el nombre del optional (visita) y del guía
         if not optional_name:
             continue
-        title = f"{optional_name or 'Actividad'} – Guía {local_guide}"
+        guide_name = local_guide if local_guide else "" + " " + local_guide_surname if local_guide_surname else ""
+        title = f"{optional_name or 'Actividad'} – Guía {guide_name}"
         # start es date+time, end igual (usa duration si la tienes)
         start_dt = datetime.combine(activity.date, activity.time) if activity.time else activity.date
         # supongamos que cada actividad dura 2 horas, o usa activity.duration
         end_dt = start_dt + timedelta(hours=activity.duration or 2)
 
-        events.append(CalendarActivity(
-            id=f"act-{activity.id}",
-            title=title,
-            start=start_dt,
-            end=end_dt,
-            guide=local_guide,
-            comments=activity.comment,
-            pax=activity.PAX
-        ))
+        events.append({
+            'id':f"{activity.id}",
+            'title':title,
+            'start':start_dt,
+            'end':end_dt,
+            'guide':guide_name,
+            'comments':activity.comment,
+            'pax':activity.PAX,
+            'time': activity.time.isoformat() if activity.time else None,
+            'duration': activity.duration,
+            'reservation_n': activity.reservation_n,
+            'city': city,
+        })
 
     return events
