@@ -8,6 +8,7 @@ from app.service import hotel_reservation as hotel_reservation_service
 from app.service import activity as activity_service
 from app.service import day_transports as day_transports_service
 from app.service import group_city_permits as permits_service
+from app.service import group as group_service
 
 
 async def get_group_calendar_events(
@@ -40,6 +41,8 @@ async def get_group_calendar_events(
         db=db, id_group=id_group, filters=hotel_filters
     )
     seen_hotels = set()
+
+    group_data = await group_service.get_group(db, id_group)
 
     for r in rows:
         # Clave única: mismo hotel, fechas y pax
@@ -88,7 +91,7 @@ async def get_group_calendar_events(
             title=r['hotel_name'],
             start=start_dt.isoformat(),
             end=end_dt.isoformat(),
-            color="#DBFFCB",
+            color="#FCF4D7" if group_data.PAX == r['pax'] else "#EBDA9E",
             extendedProps={
                 "Ciudad": r['city'],
                 "Pax": r['pax'],
@@ -115,15 +118,20 @@ async def get_group_calendar_events(
         title=o.get('title'),
         start=o.get('start').isoformat(),
         end=o.get('end').isoformat(),
-        color="#FFF1D5",
+        color= "#A5BEAD" if o.get('status_optional') != "cancelled" else "#72AE88",
         extendedProps={
+            "id_local_guide": o.get('id_local_guide'),
+            "Guia local": o.get('guide', ''),
+            "Telefono": o.get('phone', ''),
             "Ciudad": o.get('city'),
             "Horario":o.get('time', ''),
             "Duracion": o.get('duration'),  
-            "Guia local": o.get('guide', ''),
+            "Numero de reserva": o.get('reservation_n'),
             "Pax": o.get('pax'),
             "Comentarios": o.get('comments'),
-            "Numero de reserva": o.get('reservation_n')
+            "id_optional":o.get('id_optional'),
+            "id_days": o.get('id_days'),
+            "Estado": o.get('status_optional', 'pending'),
         }
         ))
    
@@ -153,9 +161,9 @@ async def get_group_calendar_events(
         title=str(t.mode.capitalize()) + " - " + str(t.operator_name) + " - " + str(t.reference_code),
         start=t.departure_time.isoformat() if t.departure_time else '',
         end=(t.departure_time + timedelta(hours=1)).isoformat() if t.departure_time else '',
-        color="#A0FA7C",
+        color="#689AB4",
         extendedProps={
-            "Metodo de transporte": t.mode.capitalize(),
+            "Metodo de transporte": t.mode,
             "Proveedores": t.operator_name,
             "Codigo de referencia": t.reference_code,
             "Comentarios": t.notes,
@@ -167,7 +175,7 @@ async def get_group_calendar_events(
     city_permit_rows = await permits_service.list_permits_by_group(db, id_group)
     for p in city_permit_rows:
         print(f'\n\n\n {p} \n\n\n')
-        color = "#e0c5e0" if p.status == "approved" else "#da89d7" #"#f09693"
+        color = "#B4BD62" if p.status == "approved" else "#9CA73F" #"#f09693"
         events.append(CalendarEvent(
             id=f"{p.id_permit}",
             type="permit",
@@ -187,4 +195,30 @@ async def get_group_calendar_events(
                 "Comentarios": p.comments
             }
         ))
+
+    # 6. Vuelos 
+    id_arrival = group_data.initial_flight if group_data.initial_flight else "Sin información del vuelo"
+    id_departure = group_data.end_flight if group_data.end_flight else "Sin información del vuelo"
+    start_date = group_data.start_date
+    end_date = group_data.end_date 
+    for i in range(0,2):
+        hour = group_data.datetime_initial_flight if i == 0 else group_data.datetime_end_flight
+        event_type = "llegada" if i == 0 else "partida"
+        events.append(CalendarEvent(
+            id=f"{id_arrival if i == 0 else id_departure}",
+            type="flight",
+            title=f"Vuelos {event_type} {id_arrival if i == 0 else id_departure}",
+            start=start_date.isoformat() if i == 0 else end_date.isoformat(),
+            end=start_date.isoformat() if i == 0 else end_date.isoformat(),
+            color= "#dae7f8",
+            extendedProps={
+                "Tipo de vuelo": "Llegada" if i == 0 else "Partida",
+                "Fecha": start_date.isoformat() if i == 0 else end_date.isoformat(),
+                "Hora": hour.isoformat() if hour else 'Sin hora registrada',
+                "Numero de vuelo": id_arrival if i == 0 else id_departure,
+            }
+        ))
+
+
+
     return events

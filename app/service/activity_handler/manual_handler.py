@@ -24,7 +24,6 @@ class ManualActivitiesHandler:
         day = await crud_days.get_day_by_id_days(db, id_days)
         optional = await crud_optionals.get_optional(db, id_optional)
 
-        print(optional)
         if day.city != optional[0].city:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -61,10 +60,28 @@ class ManualActivitiesHandler:
             await self._validate_city_match(
                 db, activity_data.id_days, activity_data.id_optional
             )
+        
+        update_dict = {
+            "id_days": activity_data.id_days,
+            "id_optional": activity_data.id_optional,
+            "time": activity_data.time,
+            "duration": activity_data.duration,
+            "pax": activity_data.PAX,
+            "reservation_n": activity_data.reservation_n,
+            "comment": activity_data.comment,
+            "status_optional": activity_data.status_optional,
+            "id_local_guide": activity_data.id_local_guide,
+            "updated_by": activity_data.updated_by,  # <-- asegúrate de que esté presente
+        }
+
+        print(f"update_dict: {update_dict}")
+        
+
+        activity_update = ActivityUpdate(**update_dict)
 
         try:
             return await crud_activity.update_activity(
-                db, id_activity, activity_data
+                db, id_activity, activity_update
             )
         except IntegrityError:
             raise HTTPException(
@@ -75,3 +92,38 @@ class ManualActivitiesHandler:
     # ─────────────────────────── delete ────────────────────────────
     async def delete(self, db: AsyncSession, id_activity: str) -> None:
         await crud_activity.delete_activity(db, id_activity)
+
+
+    async def update_pax(self, db: AsyncSession, id_activity: str, pax: int = 1, operation: str = 'increment'):
+        """
+        Actualiza el número de pax de una actividad opcional.
+        """
+        activity = await crud_activity.get_activity(db, id_activity)
+        if not activity:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Actividad no encontrada."
+            )
+
+        # Aquí se implementaría la lógica para actualizar el número de pax
+        # Por ejemplo, podrías incrementar o decrementar el número de pax
+        # según la lógica de tu aplicación.
+
+        if operation == 'increment':
+            activity.PAX += pax
+        elif operation == 'decrement':
+            if activity.PAX > 0:
+                activity.PAX -= pax
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="No se puede decrementar el número de pax por debajo de cero."
+                )
+        try:
+            db.commit()
+            db.refresh(activity)
+        except IntegrityError:
+            db.rollback()
+            raise
+        return activity
+            

@@ -23,7 +23,7 @@ class ActivityBase(BaseModel):
     id_days: str = Field(..., description="FK al día (days.id)")
     id_optional: int = Field(..., description="FK a optionals.id")
 
-    time: Optional[time] = None
+    time: time | None
     duration: int | None = Field(None, ge=0, description="Duración en horas")
     pax: int | None = Field(None, ge=0, alias="PAX")
     reservation_n: str | None = Field(None, max_length=255)
@@ -53,7 +53,7 @@ class ActivityUpdate(BaseModel):
         None, description="Mover la actividad a otro día (FK days.id)"
     )
     id_optional: int 
-    time: Optional[time] = None
+    time: time | None
     duration: int | None = Field(None, ge=0)
     pax: int | None = Field(None, ge=0, alias="PAX")
     reservation_n: str | None = Field(None, max_length=255)

@@ -133,7 +133,7 @@ class ClientsHandler(BaseHandler):
 
                 response = await create_optional_purchase(db=db, group_number=group_number, id_clientes=id_cliente, packages=packete, circuit_name=circuit_name, age=age)
             
-                
+            current_room_ids_by_day = {}
             if row.get('TIPO DE HABITACIÓN', None):
                 room_type = row['TIPO DE HABITACIÓN']
                 old_room_type = room_type

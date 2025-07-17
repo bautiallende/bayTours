@@ -1,9 +1,8 @@
 @use 'variables';
 
-
 .fc-h-event .fc-event-main,
 .fc-v-event .fc-event-main {
-  color: #4064f1;
+  color: #0c0c0c;
 }
 
 /* Ajuste de tamaño mínimo y padding en vista dayGrid */
@@ -40,22 +39,28 @@
   color: #333;
 }
 
-/* Diferentes colores según tipo */
-// Ahora usamos las clases que inyecta `eventClassNames`
-.fc-type-hotel {
-  background-color: #DBFFCB;
-  z-index: 1; /* hoteles detrás */
-}
-.fc-type-optional {
-  background-color: #FFF1D5;
-  z-index: 2; /* opcionales por encima */
-}
-.fc-type-permit {
-  /* cuando lo implementemos */
-  background-color: #FFDCDC;
-  z-index: 2;
+/* ================================
+   Sección de colores dinámicos
+   ================================ */
+
+/* 1) Ocultar el puntito indicador en dayGrid */
+.fc-daygrid-event .fc-event-dot {
+  display: none !important;
 }
 
-/* Si quieres controles más finos sobre el stacking, podrías usar: */
-.fc-type-hotel { z-index: 1 !important; }
-.fc-type-optional, .fc-type-permit { z-index: 2 !important; }
+/* 2) Quitar cualquier fondo propio de .fc-event-main(o .fc-event-main-frame)
+      para que herede el `background-color` inline que FullCalendar inyecta
+      en el elemento .fc-event (padre). */
+.fc-event-main,
+.fc-event-main-frame {
+  background: none !important;
+  border: none !important;
+}
+
+/* FullCalendar coloca en línea:
+     style="background-color: #FFF1D5; border-color: #FFF1D5"
+   en el elemento .fc-event, por lo que ahora TODO el recuadro se pinta
+   según ese color. */
+
+
+

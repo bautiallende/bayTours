@@ -18,6 +18,8 @@ const OptionalEditModal = ({ show, onHide, onSave, event }) => {
 
   // Helper para extraer props en inglés o español
   const getProp = (eng, esp) => event.extendedProps[eng] ?? event.extendedProps[esp] ?? '';
+
+  // Calcular duración en minutos
   const computeDuration = () => {
     if (event.start && event.end) {
       const start = new Date(event.start);
@@ -29,18 +31,17 @@ const OptionalEditModal = ({ show, onHide, onSave, event }) => {
 
   // Estado del formulario
   const [formData, setFormData] = useState({
-    time: event.startStr?.slice(11,16) || '',
+    time: event.startStr?.slice(11, 16) || '',
     duration: computeDuration(),
-    pax: getProp('clientsCount', 'PAX') || '',
     reservation_n: getProp('reservation_n', 'reservationNumber') || '',
     status_optional: getProp('status_optional', 'EstadoOpcional') || '',
-    id_local_guide: getProp('id_local_guide', 'id_local_guide') || '',
+    id_local_guide: getProp('guide', 'id_local_guide') || '',
     comment: ''
   });
 
   // Cargar guías locales según ciudad
   useEffect(() => {
-    const city = getProp('Ciudad', 'Ciudad');
+    const city = getProp('city', 'City') || getProp('Ciudad', 'Ciudad');
     if (!city) return;
     setLoadingGuides(true);
     fetch(`${process.env.REACT_APP_API_URL}/local_guides/local_guides?city=${encodeURIComponent(city)}`)
@@ -50,18 +51,17 @@ const OptionalEditModal = ({ show, onHide, onSave, event }) => {
       .finally(() => setLoadingGuides(false));
   }, [event]);
 
-  // Al montar o cambiar evento
+  // Al montar o cambiar evento: guardar comentario previo y limpiar textarea
   useEffect(() => {
-    const initial = getProp('comments', 'Comentario') || '';
+    const initial = getProp('Comentarios', 'Comentario') || '';
     initialCommentRef.current = initial;
     setFormData(prev => ({
       ...prev,
-      time: event.startStr?.slice(11,16) || '',
+      time: event.startStr?.slice(11, 16) || '',
       duration: computeDuration(),
-      pax: getProp('clientsCount', 'PAX') || '',
-      reservation_n: getProp('reservation_n', 'reservationNumber') || '',
-      status_optional: getProp('status_optional', 'EstadoOpcional') || '',
-      id_local_guide: getProp('id_local_guide', 'id_local_guide') || '',
+      status_optional: getProp('Estado', 'EstadoOpcional') || '',
+      reservation_n: getProp('Numero de reserva', 'reservationNumber') || '',
+      id_local_guide: getProp('guide', 'id_local_guide') || '',
       comment: ''
     }));
   }, [event]);
@@ -76,21 +76,23 @@ const OptionalEditModal = ({ show, onHide, onSave, event }) => {
       alert('La hora es obligatoria.');
       return;
     }
+    // Concatenar comentarios previos y nuevos
     const allComments =
       (initialCommentRef.current ? initialCommentRef.current + '\n' : '') +
       (formData.comment ? `- ${formData.comment}\n` : '');
 
     const payload = {
+      id_days: event.extendedProps.id_days,
+      id_optional: event.extendedProps.id_optional,
+      PAX: event.extendedProps.Pax,
       time: formData.time,
-      duration: Number(formData.duration) || undefined,
-      pax: Number(formData.pax) || undefined,
+      duration: Number(formData.duration)/60 || undefined,
       reservation_n: formData.reservation_n || undefined,
       status_optional: formData.status_optional || undefined,
       id_local_guide: Number(formData.id_local_guide) || undefined,
       comment: allComments,
       updated_by: 'frontend-dev'
     };
-
     onSave(payload);
   };
 
@@ -103,7 +105,9 @@ const OptionalEditModal = ({ show, onHide, onSave, event }) => {
         {/* Carga de guías */}
         {loadingGuides && <Spinner animation="border" />}
         {guidesError && <Alert variant="danger">{guidesError}</Alert>}
+
         <Form>
+          {/* Fila 1: hora, duración, reserva */}
           <Row>
             <Col md={4} className="mb-3">
               <Form.Label>Hora</Form.Label>
@@ -114,21 +118,22 @@ const OptionalEditModal = ({ show, onHide, onSave, event }) => {
               <Form.Control type="number" name="duration" value={formData.duration} onChange={handleChange} />
             </Col>
             <Col md={4} className="mb-3">
-              <Form.Label>PAX</Form.Label>
-              <Form.Control type="number" name="pax" value={formData.pax} onChange={handleChange} />
-            </Col>
-          </Row>
-          <Row>
-            <Col md={6} className="mb-3">
               <Form.Label>N° Reserva</Form.Label>
               <Form.Control type="text" name="reservation_n" value={formData.reservation_n} onChange={handleChange} placeholder="Código de reserva" />
             </Col>
+          </Row>
+
+          {/* Fila 2: estado, guía local */}
+          <Row>
             <Col md={6} className="mb-3">
               <Form.Label>Estado</Form.Label>
-              <Form.Control type="text" name="status_optional" value={formData.status_optional} onChange={handleChange} placeholder="Estado de la actividad" />
+              <Form.Select name="status_optional" value={formData.status_optional} onChange={handleChange}>
+                <option value="">Selecciona estado</option>
+                <option value="pending">Pendiente</option>
+                <option value="confirmed">Aprobado</option>
+                <option value="cancelled">Cancelado</option>
+              </Form.Select>
             </Col>
-          </Row>
-          <Row>
             <Col md={6} className="mb-3">
               <Form.Label>Guía Local</Form.Label>
               <Form.Select name="id_local_guide" value={formData.id_local_guide} onChange={handleChange}>
@@ -138,7 +143,11 @@ const OptionalEditModal = ({ show, onHide, onSave, event }) => {
                 ))}
               </Form.Select>
             </Col>
-            <Col md={6} className="mb-3">
+          </Row>
+
+          {/* Fila 3: comentario */}
+          <Row>
+            <Col md={12} className="mb-3">
               <Form.Label>Agregar Comentario</Form.Label>
               <Form.Control as="textarea" name="comment" rows={3} value={formData.comment} onChange={handleChange} placeholder="Escribe un nuevo comentario..." />
             </Col>

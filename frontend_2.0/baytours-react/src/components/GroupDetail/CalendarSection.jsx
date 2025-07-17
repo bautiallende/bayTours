@@ -72,8 +72,8 @@ const CalendarSection = ({ groupId, initialDate }) => {
   }, [groupId, showHotels, showActivities, showPermits, showTransport]);
 
   // Etiquetas para tooltip
-  const typeLabels = { hotel: 'Hotel', optional: 'Opcional', permit: 'Permiso', transport: 'Transporte' };
-  const statusLabels = { pending: 'Pendiente', submitted: 'Enviado', approved: 'Aprobado', rejected: 'Rechazado' };
+  const typeLabels = { hotel: 'Hotel', optional: 'Opcional', permit: 'Permiso', transport: 'Transporte', flight:'Vuelo' };
+  const statusLabels = { pending: 'Pendiente', submitted: 'Enviado', approved: 'Aprobado', rejected: 'Rechazado', confirmed:'Aprobado', cancelled: "Cancelado" };
   const formatTooltipDate = val => {
     const d = new Date(val);
     if (!isNaN(d)) {
@@ -151,7 +151,7 @@ const CalendarSection = ({ groupId, initialDate }) => {
 
   const handleSaveOptional = updatedData => {
     const id = selectedOptional.id;
-    fetch(`${process.env.REACT_APP_API_URL}/activities/${id}`, {
+    fetch(`${process.env.REACT_APP_API_URL}/activity/activities/${id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...updatedData, updated_by: 'frontend-dev' })
     })
       .then(res => { if (!res.ok) throw res; return res.json(); })
@@ -172,7 +172,8 @@ const CalendarSection = ({ groupId, initialDate }) => {
     eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
     eventClassNames: ({ event }) => [`fc-type-${event.extendedProps.type}`],
     dayMaxEvents: false,
-    loading: isLoading => setLoading(isLoading)
+    loading: isLoading => setLoading(isLoading),
+    eventDisplay: 'block'
   };
 
   if (initialDate) {
@@ -212,7 +213,7 @@ const CalendarSection = ({ groupId, initialDate }) => {
                   <div><strong>Estado:</strong> {statusLabels[hoverEvent.extendedProps.Estado]}</div>
                 )}
                 {Object.entries(hoverEvent.extendedProps)
-                  .filter(([k]) => k !== 'sortStart' && k !== 'type' && k !== 'Estado')
+                  .filter(([k]) => k !== 'sortStart' && k !== 'type' && k !== 'Estado' && k !== 'id_optional'  && k !== 'id_days' && k !== 'id_local_guide')
                   .map(([key, value]) => (
                     <div key={key}><strong>{key}:</strong> {typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value) ? formatTooltipDate(value) : value ?? '—'}</div>
                   ))}

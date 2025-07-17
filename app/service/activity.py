@@ -21,6 +21,10 @@ async def update(
     handler = activity_handlers.get('manual')     # sólo el manual permite updates
     return await handler.update(db, id_activity, activity_data)
 
+async def update_pax(db: AsyncSession, id_activity: str, pax: int, operation: str = 'increment'):
+    handler = activity_handlers.get('manual')     # sólo el manual permite updates
+    return await handler.update_pax(db, id_activity, pax, operation)
+
 
 async def delete(
     db: AsyncSession,
@@ -60,7 +64,7 @@ async def get_calendar_data(db: AsyncSession, id_group: str, start: Optional[str
     for row in rows:
         print(f"Actividades obtenidas: {row[0].__dict__} - {row[1]} - {row[2]}")
     events: List[CalendarActivity] = []
-    for activity, optional_name, local_guide, local_guide_surname, city in rows:
+    for activity, id_optional, optional_name, id_local_guide, local_guide, local_guide_surname, phone, city in rows:
         # construye el title usando el nombre del optional (visita) y del guía
         if not optional_name:
             continue
@@ -76,6 +80,8 @@ async def get_calendar_data(db: AsyncSession, id_group: str, start: Optional[str
             'title':title,
             'start':start_dt,
             'end':end_dt,
+            'id_local_guide':id_local_guide,
+            'phone':phone,
             'guide':guide_name,
             'comments':activity.comment,
             'pax':activity.PAX,
@@ -83,6 +89,9 @@ async def get_calendar_data(db: AsyncSession, id_group: str, start: Optional[str
             'duration': activity.duration,
             'reservation_n': activity.reservation_n,
             'city': city,
+            'id_optional':id_optional,
+            'id_days': activity.id_days,
+            'status_optional': activity.status_optional,
         })
 
     return events

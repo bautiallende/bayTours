@@ -29,7 +29,12 @@ type FormData = {
 const initialNotesRef = useRef('');
 const [formData, setFormData] = useState({
   // ... otros campos inicializados
-  notes: '' // textarea vacío para nuevos comentarios
+  notes: '', // textarea vacío para nuevos comentarios
+  mode: getProp('mode', 'Metodo de transporte') || '',
+  operator_name: getProp('operator_name', 'Proveedores') || '',
+  reference_code: getProp('reference_code', 'Codigo de referencia') || '',
+  departure_time: formatDateTime(getProp('departure_time', 'Horario de partida')) || '',
+
 });
 
 // Al montar, guardamos comentario inicial en ref y limpiamos textarea

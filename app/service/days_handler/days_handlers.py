@@ -118,7 +118,8 @@ class DaysHandler(BaseHandler):
                       date = current_date,
                       time = r.activity_time, 
                       id_optional = r.id_optional,
-                      status_optional = 'pending',                      
+                      status_optional = 'pending',
+                      PAX = 0                      
                     )
                   request = await activity_services.create(db=db, activity_data=activity_data, source='auto')  
             

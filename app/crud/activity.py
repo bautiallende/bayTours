@@ -103,7 +103,7 @@ async def get_calendar_activities(
     aplicando filtros de grupo, rango de fechas y opcional si se indica.
     """
     stmt = (
-        select(Activity, Optionals.name.label("optional_name"), LocalGuides.name.label("local_guide"), LocalGuides.surname.label("local_guide_surname"), Optionals.city)
+        select(Activity, Optionals.id_optional, Optionals.name.label("optional_name"),LocalGuides.id_local_guide ,LocalGuides.name.label("local_guide"), LocalGuides.surname.label("local_guide_surname"), LocalGuides.phone , Optionals.city)
         .join(Days, Days.id == Activity.id_days)
         .outerjoin(Optionals, Activity.id_optional == Optionals.id_optional)
         .outerjoin(LocalGuides, Activity.id_local_guide == LocalGuides.id_local_guide)

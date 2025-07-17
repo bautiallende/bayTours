@@ -70,6 +70,10 @@ class OptionalPurchaseHandler(BaseHandler):
                 print(f'el opcional a guardar es: \n{vars(optional_purchase)}\n\n')
 
                 db.add(optional_purchase)
+
+                # aca hay que sumar al a pax total de la actividad 
+                response = await activity_services.update_pax(db=db, id_activity=activity_data.id, pax=1, operation='increment')
+
             db.commit()
         except Exception as e:
             print(f"Error: {str(e)}")
@@ -97,6 +101,7 @@ class OptionalPurchaseHandler(BaseHandler):
         optional_purchase_data_sql.status = 'New'
 
         result = await optional_purchase_functions.create_one(db=db, optional_purchase_data=optional_purchase_data_sql)
+        await activity_services.update_pax(db=db, id_activity=optional_purchase_data_sql.id_activity, pax=1, operation='increment')
         return result
 
 
@@ -136,6 +141,8 @@ class OptionalPurchaseHandler(BaseHandler):
             return "Usuario no encontrado"
         
         result = await optional_purchase_functions.delete(db=db, optional_purchase_data=optional_data)
+
+        await activity_services.update_pax(db=db, id_activity=id_activity, pax=1, operation='decrement')
         return result
 
             

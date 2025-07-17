@@ -70,7 +70,7 @@ async def update_activity_endpoint(
     Modifica una actividad: puede moverla a otro día, cambiar estado, PAX, etc.
     """
     # Convertimos el payload a ORM para el handler manual
-    activity_row = Activity(**payload.model_dump(exclude={"updated_by"}, by_alias=True))
+    activity_row = Activity(**payload.model_dump(by_alias=True))
     return await activity_service.update(
         db=db,
         id_activity=id_activity,
