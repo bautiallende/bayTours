@@ -1,8 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from collections import defaultdict
+from datetime import date
 from app.models.days import Days
 from sqlalchemy.future import select
 from sqlalchemy import asc, desc
+
 
 
 
@@ -49,3 +51,9 @@ async def get_day_by_group_and_city(db:AsyncSession, id_group:str, city:str):
     result = db.execute(
         select(Days).where(Days.id_group == id_group, Days.city == city))
     return result.scalars().all()
+
+
+async def get_day_by_group_and_date(db:AsyncSession, id_group:str, date:date):
+    result = db.execute(
+        select(Days).where(Days.id_group == id_group, Days.date == date))
+    return result.scalars().first()

@@ -1,7 +1,8 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Response, status, HTTPException
 from sqlalchemy.orm import Session
+from datetime import date
 
 from ..dependencies import get_db
 from app.schemas.day_transports import (
@@ -16,6 +17,7 @@ from app.service.day_transports import (
     delete_transport,
     get_transports_by_id_group
 )
+from app.service.days import get_date_by_group_and_date
 
 router = APIRouter(tags=["day_transports"])
 
@@ -36,6 +38,29 @@ async def create_day_transport_endpoint(
     """
     Añade un transporte real (p. ej. billete de ferry) al día indicado.
     """
+    return await create_transport(db, id_day, payload)
+
+@router.post(
+    "/days/{id_group}/{day_date}/transports_date",
+    response_model=DayTransportRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_day_transport_endpoint_by_date(
+    day_date: date,
+    id_group: str,
+    payload: DayTransportCreate,
+    db:Session = Depends(get_db),
+):
+    """
+    Añade un transporte real (p. ej. billete de ferry) al día indicado.
+    """
+    day_data = await get_date_by_group_and_date(db, id_group, day_date)
+    if not day_data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No se encontró el día para el grupo y la fecha especificados."
+        )
+    id_day = day_data.id
     return await create_transport(db, id_day, payload)
 
 

@@ -43,7 +43,7 @@ class RoomingListHandler(BaseHandler):
         pax_total = passengers_df['PAX'].count()-1
         print(f"Total de PAX: {pax_total}")
 
-        passengers_df.to_csv('passengers.csv')
+        #passengers_df.to_csv('passengers.csv')
 
         # Identificar el vuelo de llegada 
         arrival_flight =  flights_df[flights_df["SEGMENTO"] == "IDA"].iloc[-1]

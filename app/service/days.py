@@ -1,6 +1,6 @@
 from .days_handler import day_handler
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime
+from datetime import datetime, date
 from app.crud import days as days_functions
 
 
@@ -24,3 +24,6 @@ async def get_days_filter(db:AsyncSession, id_group:str):
     return response
 
 
+async def get_date_by_group_and_date(db:AsyncSession, id_group:str, date:date):
+    response = await days_functions.get_day_by_group_and_date(db=db, id_group=id_group, date=date)
+    return response

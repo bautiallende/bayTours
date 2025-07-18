@@ -135,23 +135,7 @@ async def get_group_calendar_events(
         }
         ))
    
-    # 3. Permisos
-    # perm_rows = await permits_service.get_calendar_data(db=db, id_group=id_group, start=start, end=end, filters=filters)
-    # for p in perm_rows:
-    #     color = "#5cb85c" if p.processed else "#d9534f"
-    #     events.append(CalendarEvent(
-    #         id=f"permit-{p.id}",
-    #         type="permit",
-    #         title="Permiso" + p.city,
-    #         start=p.date.isoformat(),
-    #         color=color,
-    #         extendedProps={
-    #             "city": p.city,
-    #             "processed": p.processed
-    #         }
-    #     ))
-
-    # 4. Metodos de transporte 
+    # 3. Metodos de transporte 
 
     transport_rows = await day_transports_service.get_transports_by_id_group(db, id_group)
     for t in transport_rows:
@@ -171,7 +155,7 @@ async def get_group_calendar_events(
         }
         ))
     
-    # 5. Permisos de ciudad
+    # 4. Permisos de ciudad
     city_permit_rows = await permits_service.list_permits_by_group(db, id_group)
     for p in city_permit_rows:
         print(f'\n\n\n {p} \n\n\n')
@@ -196,7 +180,7 @@ async def get_group_calendar_events(
             }
         ))
 
-    # 6. Vuelos 
+    # 5. Vuelos 
     id_arrival = group_data.initial_flight if group_data.initial_flight else "Sin información del vuelo"
     id_departure = group_data.end_flight if group_data.end_flight else "Sin información del vuelo"
     start_date = group_data.start_date
@@ -218,7 +202,5 @@ async def get_group_calendar_events(
                 "Numero de vuelo": id_arrival if i == 0 else id_departure,
             }
         ))
-
-
 
     return events

@@ -35,7 +35,9 @@ class HotelReservationUpdate(BaseModel):
     id_hotel: int
     id_group: str
     start_date: date
+    hour_check_in: time
     end_date: date
+    hour_check_out: time
     pax: int
     currency: Optional[str]
     total_to_pay: Optional[float]

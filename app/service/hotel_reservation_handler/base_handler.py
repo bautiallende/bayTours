@@ -35,7 +35,9 @@ class HotelsReservationsHandlers():
         hotel_data.id_hotel = hotel_info.id_hotel
         hotel_data.id_group = hotel_info.id_group
         hotel_data.start_date = hotel_info.start_date
+        hotel_data.hour_check_in = hotel_info.hour_check_in
         hotel_data.end_date = hotel_info.end_date
+        hotel_data.hour_check_out = hotel_info.hour_check_out
         hotel_data.PAX = hotel_info.pax
         hotel_data.currency = hotel_info.currency
         hotel_data.total_to_pay = hotel_info.total_to_pay
