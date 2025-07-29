@@ -2,6 +2,7 @@ import json
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.hotel_reservation import HotelReservation
 from app.models.hotel import Hotel
+from app.models.cities import City
 from collections import defaultdict
 from app.models.days import Days
 from sqlalchemy.exc import SQLAlchemyError
@@ -126,19 +127,21 @@ async def get_by_group(db:AsyncSession, id_group:str, filters:dict=None):
             Hotel.phone_2,
             Hotel.mail_1,
             Hotel.mail_2,
-            Days.city,
             Days.day,
-            Days.date
+            Days.date,
+            City.name.label("city"),
+            Days.id_city
         )
         .outerjoin(Days, HotelReservation.id_day == Days.id)
         .outerjoin(Hotel, HotelReservation.id_hotel == Hotel.id_hotel)
+        .outerjoin(City, Days.id_city == City.id)
         .where(HotelReservation.id_group == id_group)
         .order_by(Days.date.asc())
     )
     
     if filters:
         if 'city' in filters and filters['city']:
-            query = query.where(Days.city == filters['city'])
+            query = query.where(City.name == filters['city'])
         if 'hotel' in filters and filters['hotel']:
             query = query.where(Hotel.hotel_name == filters['hotel'])
         if 'date' in filters and filters['date']:
@@ -206,6 +209,7 @@ async def get_by_group(db:AsyncSession, id_group:str, filters:dict=None):
             'id_day': row.id_day,
             'id_group': row.id_group,
             "city": row.city,
+            "id_city": row.id_city,
             "day": row.day,
             "date": row.date.strftime("%d/%m/%Y"),
             'id_hotel': row.id_hotel,
@@ -244,8 +248,10 @@ async def get_hotel_by_group_and_city(db:AsyncSession, id_group:str, city:str):
             HotelReservation.id_day,
             HotelReservation.id_hotel, 
             HotelReservation.id_group, 
-            HotelReservation.start_date, 
+            HotelReservation.start_date,
+            HotelReservation.hour_check_in, 
             HotelReservation.end_date, 
+            HotelReservation.hour_check_out,
             HotelReservation.PAX, 
             HotelReservation.currency, 
             HotelReservation.total_to_pay, 
@@ -259,21 +265,22 @@ async def get_hotel_by_group_and_city(db:AsyncSession, id_group:str, city:str):
             HotelReservation.factura, 
             HotelReservation.iga, 
             Hotel.hotel_name,
-            Days.city,
+            City.name.label("city"),
             Days.day,
             Days.date
         )
         .select_from(HotelReservation)
         .join(Days, HotelReservation.id_day == Days.id)
+        .join(City, City.id == Days.id_city) 
         .join(Hotel, HotelReservation.id_hotel == Hotel.id_hotel)
         .where(HotelReservation.id_group == id_group )
-        .where(Days.city == city)
+        .where(City.name == city)
     )
 
     print(query)
 
     result = db.execute(query)
-    rows = result.fetchall()
+    rows = result.mappings().all()
 
     print(f"result: {rows}")
     return rows
@@ -301,12 +308,13 @@ async def get_hotel_by_group_and_day(db:AsyncSession, id_group:str, day_date:dat
             HotelReservation.factura, 
             HotelReservation.iga, 
             Hotel.hotel_name,
-            Days.city,
+            City.name.label("city"),
             Days.day,
             Days.date
         )
         .select_from(HotelReservation)
         .outerjoin(Days, HotelReservation.id_day == Days.id)
+        .outerjoin(City, Days.id_city == City.id)
         .outerjoin(Hotel, HotelReservation.id_hotel == Hotel.id_hotel)
         .where(HotelReservation.id_group == id_group )
         .where(Days.date == day_date)

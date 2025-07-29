@@ -14,6 +14,7 @@ from app.models.hotel import Hotel
 from app.models.clients import Clients
 from app.models.hotels_room import HotelsRooms
 from app.models.days import Days
+from app.models import City
 from app.models.hotel_reservation import HotelReservation
 from app.models.rooms_composition import RoomsComposition
 
@@ -58,6 +59,7 @@ async def get_room_by_id_group_and_city(db:AsyncSession, id_days:List[str],  fil
             HotelsRooms.currency,
             Hotel.id_hotel, 
             Hotel.hotel_name, 
+            City.name.label("city"),
             Hotel.city,
             Days.date, 
             HotelReservation.id.label('id_hotel_reservation')
@@ -69,7 +71,7 @@ async def get_room_by_id_group_and_city(db:AsyncSession, id_days:List[str],  fil
                     HotelsRooms, RoomsComposition.id_room == HotelsRooms.id_room
                     ).outerjoin(
                         Hotel, HotelsRooms.id_hotel == Hotel.id_hotel
-                        ).outerjoin(Days, Days.id == ClientsRoom.id_days
+                        ).outerjoin(City, City.id == Hotel.id_city).outerjoin(Days, Days.id == ClientsRoom.id_days
                                     ).outerjoin(HotelReservation, HotelReservation.id_day == ClientsRoom.id_days)
                         .where(ClientsRoom.id_days.in_(id_days)).order_by(Clients.passport.asc())
         )

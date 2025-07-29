@@ -14,6 +14,7 @@ from app.models.hotel_reservation import HotelReservation
 from app.models.days import Days
 from app.models.circuits import Circuit
 from app.models.responsables_hotels import ResponsablesHotels
+from app.models.cities import City
 from datetime import datetime
 from app.models.packages import Packages
 
@@ -143,10 +144,16 @@ async def get_tabla_group(db: AsyncSession, id_grupo: str = None, bus_company: s
         if current_date < start_date:
             # El tour no ha comenzado
             first_stage = db.execute(
-                select(Days.city, HotelAlias.hotel_name.label('hotel_name'))
-                .join(HotelReservation, HotelReservation.id_group == Days.id_group, isouter=True)
-                .join(HotelAlias, HotelReservation.id_hotel == HotelAlias.id_hotel, isouter=True)
-                .filter(Days.id_group == group.id_group)
+                select(City.name.label("city_name"),
+                    HotelAlias.hotel_name.label("hotel_name"))
+                .join(Days, Days.id_city == City.id)
+                .join(HotelReservation,
+                    HotelReservation.id_group == Days.id_group,
+                    isouter=True)
+                .join(HotelAlias,
+                    HotelReservation.id_hotel == HotelAlias.id_hotel,
+                    isouter=True)
+                .where(Days.id_group == group.id_group)
                 .order_by(Days.date.asc())
                 .limit(1)
             )
@@ -160,10 +167,16 @@ async def get_tabla_group(db: AsyncSession, id_grupo: str = None, bus_company: s
         elif start_date <= current_date <= end_date:
             # El tour está en progreso
             current_location = db.execute(
-                select(Days.city, HotelAlias.hotel_name.label('hotel_name'))
-                .join(HotelReservation, HotelReservation.id_day == Days.id, isouter=True)
-                .join(HotelAlias, HotelReservation.id_hotel == HotelAlias.id_hotel, isouter=True)
-                .filter(Days.id_group == group.id_group, Days.date <= current_date)
+                select(City.name.label("city_name"),
+                    HotelAlias.hotel_name.label("hotel_name"))
+                .join(Days, Days.id_city == City.id)
+                .join(HotelReservation,
+                    HotelReservation.id_day == Days.id,
+                    isouter=True)
+                .join(HotelAlias,
+                    HotelReservation.id_hotel == HotelAlias.id_hotel,
+                    isouter=True)
+                .where(Days.id_group == group.id_group, Days.date <= current_date)
                 .order_by(Days.date.desc())
                 .limit(1)
             )
@@ -232,8 +245,15 @@ async def get_filter_options(db: AsyncSession):
     result['hotels'] = [row.hotel_name for row in hotels.fetchall()]
 
     # Opcionales de ciudades
-    city = db.execute(select(Days.city).distinct())
-    result['cities'] = [row.city for row in city.fetchall()]
+    cities_stmt = (
+        select(City.name)
+        .join(Days, Days.id_city == City.id)
+        .distinct()
+        .order_by(City.name)
+    )
+    cities_rows = (db.execute(cities_stmt)).fetchall()
+    result["cities"] = [row.name for row in cities_rows]
+
 
     # Opciones de guías
     guides = db.execute(select(Guides.name).distinct())

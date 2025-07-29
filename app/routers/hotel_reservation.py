@@ -130,7 +130,7 @@ async def get_by_group_and_date(id_group:str, date_day:str, db: Session = Depend
     from app.crud.hotel_reservation import get_hotel_by_group_and_city
     from app.crud.days import get_day_by_id_days
     city_data =  await get_day_by_id_days(db=db, id_days=date_day)
-    city = city_data.city
+    city = city_data.city_rel.name 
     response = await get_hotel_by_group_and_city(db=db, id_group=id_group, city=city)
     print("response", response)
     return response

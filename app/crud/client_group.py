@@ -6,6 +6,7 @@ from app.models.activity import Activity
 from app.models.clients import Clients
 from app.models.optionals import Optionals
 from app.models.days import Days
+from app.models.cities import City
 from datetime import timedelta, datetime
 
 
@@ -33,7 +34,7 @@ async def get_grouped_client_data(db: AsyncSession, id_group:str, filters: dict 
             Clients.second_name,
             Clients.birth_date,
             Clients.sex,
-            Optionals.city,
+            City.name.label("city"),
             Optionals.name.label("optional_name"),
             OptionalPurchase.id_activity,
             OptionalPurchase.id_optionals,
@@ -55,7 +56,8 @@ async def get_grouped_client_data(db: AsyncSession, id_group:str, filters: dict 
                         Days, Activity.id_days == Days.id, isouter=True
                         ).join(
                             Optionals, OptionalPurchase.id_optionals == Optionals.id_optional, isouter=True
-                            ).where(ClientGroup.id_group == id_group).order_by(ClientGroup.pax_number)
+                            ).join(City, City.id == Days.id_city, isouter=True
+                                   ).where(ClientGroup.id_group == id_group).order_by(ClientGroup.pax_number)
     
 
 
@@ -92,7 +94,7 @@ async def get_grouped_client_data(db: AsyncSession, id_group:str, filters: dict 
         if "city" in filters and filters["city"]:
             if isinstance(filters["city"], str):
                 filters["city"] = [filters["city"]]  # Convertir a lista si es un string único
-            query = query.filter(Optionals.city.in_(filters["city"]))
+            query = query.filter(City.name.in_(filters["city"]))
 
         # Filtro por actividades
         if "activity_id" in filters and filters["activity_id"]:
@@ -164,10 +166,15 @@ async def get_grouped_client_data(db: AsyncSession, id_group:str, filters: dict 
     
     # Obtener datos de `days` para crear el `itinerary`
     itinerary_result = db.execute(
-        select(Days.city, Days.date, Days.id)
-        .where(Days.id_group == id_group)
-        .order_by(Days.date)
-    )
+            select(
+                City.name.label("city"),
+                Days.date,
+                Days.id,
+            )
+            .join(City, Days.id_city == City.id)
+            .where(Days.id_group == id_group)
+            .order_by(Days.date)
+        )
     
     days_rows = itinerary_result.fetchall()
     

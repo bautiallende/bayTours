@@ -133,8 +133,9 @@ class ClientsHandler(BaseHandler):
 
                 response = await create_optional_purchase(db=db, group_number=group_number, id_clientes=id_cliente, packages=packete, circuit_name=circuit_name, age=age)
             
-            current_room_ids_by_day = {}
+            
             if row.get('TIPO DE HABITACIÓN', None):
+                current_room_ids_by_day = {}
                 room_type = row['TIPO DE HABITACIÓN']
                 old_room_type = room_type
                 days_data = await days_service.get_all(db=db, id_group=group_number)
@@ -150,7 +151,7 @@ class ClientsHandler(BaseHandler):
             pax_number = None
             if row.get('PAX', None):
                 pax_number = row['PAX']
-
+            print(f"current_room_ids_by_day: {current_room_ids_by_day}")
             # Creamos y guardamos las habitaciones de los clientes
             await client_room_services.create_client_room(db=db, client_id=id_cliente, group_id=group_number, room_ids_by_day=current_room_ids_by_day, new=new)
 

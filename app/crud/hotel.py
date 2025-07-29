@@ -10,7 +10,7 @@ async def get_one(db:AsyncSession, id_hotel):
 
 
 async def get_by_city(db:AsyncSession, city:str):
-    query = db.execute(select(Hotel).where(Hotel.city == city))
+    query = db.execute(select(Hotel).where(Hotel.id_city == city))
     return query.scalars().all()
 
 

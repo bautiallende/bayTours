@@ -59,6 +59,8 @@ async def list_cities(db: AsyncSession, country: str | None = None) -> Sequence[
     """Return all cities, optionally filtered by ISO country code."""
     return await crud_cities.list_cities(db, country=country)
 
+async def get_city_by_name(db:AsyncSession, name: str):
+    return await crud_cities.get_city_id(db, name)
 
 async def update_city(db: AsyncSession, city_id: int, payload: CityUpdate) -> City:
     """Partial update of a city by ID."""

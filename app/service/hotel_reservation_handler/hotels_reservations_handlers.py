@@ -28,22 +28,23 @@ class HotelReservationHandler(HotelsReservationsHandlers):
         if not hotel_info:
             raise HTTPException(status_code=404, detail="El hotel no existe.")
         
+        hotel_row = hotel_info[0]
+        hotel_city_id = hotel_row.id_city
 
         itinerary = await days_service.get_all(db=db, id_group=hotel_data.id_group)
 
         # Validar que las fechas del hotel coincidan con el itinerario
         for day in itinerary:
-            print(f'el day es: {day.city}')
             if hotel_data.start_date <= day.date < hotel_data.end_date:
-                print(f"hotel_data.start_date: {hotel_data.start_date}, day.date: {day.date}, hotel_data.end_date: {hotel_data.end_date}")
                 # Verificar si las ciudades coinciden
-                if (day.city).lower() != (hotel_info[0].city).lower():
+                if day.id_city != hotel_city_id:
                     raise HTTPException(
                         status_code=400,
                         detail=(
-                            f"El hotel '{hotel_info[0].hotel_name}' no corresponde con la ciudad del grupo "
-                            f"en las fechas dadas ({day.city} vs {hotel_info[0].city})."
-                        )
+                            f"El hotel '{hotel_row.hotel_name}' no corresponde con la ciudad "
+                            f"del grupo en la fecha {day.date} "
+                            f"(day.id_city={day.id_city} ≠ hotel.id_city={hotel_city_id})."
+                        ),
                     )
 
         # Validar hoteles existentes para las mismas fechas
@@ -183,7 +184,7 @@ class HotelReservationHandler(HotelsReservationsHandlers):
         day_info = await days_service.get_all(db=db, id_group=new_hotel.id_group)
 
         # Filtrar los días del itinerario para la ciudad del hotel (comparación sin sensibilidad a mayúsculas)
-        itinerary_in_city = [d for d in day_info if d.city.lower() == hotel_info.city.lower()]
+        itinerary_in_city = [d for d in day_info if d.id_city == hotel_info.id_city]
         if not itinerary_in_city:
             print("No hay días en el itinerario para la ciudad del hotel.")
             return False
@@ -206,8 +207,8 @@ class HotelReservationHandler(HotelsReservationsHandlers):
                 print(f"No se encontró configuración para la fecha {current_date}.")
                 return False
             # Verificar que la ciudad del itinerario coincida con la del hotel
-            if day_config.city.lower() != hotel_info.city.lower():
-                print(f"La ciudad en el itinerario ({day_config.city}) no coincide con la del hotel ({hotel_info.city}) en {current_date}.")
+            if day_config.id_city != hotel_info.id_city:
+                print(f"La ciudad en el itinerario ({day_config.id_city}) no coincide con la del hotel ({hotel_info.id_city}) en {current_date}.")
                 return False
 
             if new_hotel.id:

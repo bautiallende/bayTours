@@ -73,17 +73,26 @@ const HotelModal = ({
 
   // Estados para los campos de la asignación
   const [city, setCity] = useState(initialData.city || '');
+  const [id_city, setIdCity] = useState(initialData.id_city || '');
   const [id_day, setIdDay] = useState(initialData.id_day || '');
   const [assignedPax, setAssignedPax] = useState(initialData.assigned_pax || 0);
   const [date, setDate] = useState(formatDateForInput(initialData.date, defaultYear));
   const [hotelId, setHotelId] = useState(initialData.id_hotel || '');
   const [hotelsList, setHotelsList] = useState([]);
-  const [checkIn, setCheckIn] = useState(
-    initialData.check_in ? formatDateForInput(initialData.check_in, defaultYear) : ''
-  );
-  const [checkOut, setCheckOut] = useState(
-    initialData.check_out ? formatDateForInput(initialData.check_out, defaultYear) : ''
-  );
+
+
+
+  // Combinar fecha y hora para check-in
+  const initialCheckInDate = formatDateForInput(initialData.check_in || initialData.date, defaultYear);
+  const initialCheckInTime = initialData.hour_check_in || '15:00';
+  const [checkIn, setCheckIn] = useState(`${initialCheckInDate}T${initialCheckInTime}`);
+
+  // Combinar fecha y hora para check-out
+  const initialCheckOutDate = formatDateForInput(initialData.check_out || initialData.date, defaultYear);
+  const initialCheckOutTime = initialData.hour_check_out || '10:00';
+  const [checkOut, setCheckOut] = useState(`${initialCheckOutDate}T${initialCheckOutTime}`);
+
+
   const [roomingList, setRoomingList] = useState(
     typeof initialData.rooming_list === 'boolean' ? initialData.rooming_list : false
   );
@@ -130,18 +139,20 @@ const HotelModal = ({
   // Actualiza los estados cuando initialData cambia
   useEffect(() => {
     setCity(initialData.city || '');
+    setIdCity(initialData.id_city || '');
     setDate(formatDateForInput(initialData.date, defaultYear));
     setHotelId(initialData.id_hotel || '');
     setIdDay(initialData.id_day || '');
     setAssignedPax(initialData.assigned_pax || 0);
     if (initialData.city) {
-      fetch(`${process.env.REACT_APP_API_URL}/hotels/get_hotel_by_city?city=${encodeURIComponent(initialData.city)}`)
+      fetch(`${process.env.REACT_APP_API_URL}/hotels/get_hotel_by_city?city=${encodeURIComponent(initialData.id_city)}`)
         .then(res => res.json())
         .then(data => setHotelsList(data))
         .catch(err => console.error('Error al obtener hoteles:', err));
     }
-    setCheckIn(initialData.check_in ? formatDateForInput(initialData.check_in, defaultYear) : '');
-    setCheckOut(initialData.check_out ? formatDateForInput(initialData.check_out, defaultYear) : '');
+    setCheckIn(`${formatDateForInput(initialData.check_in || initialData.date, defaultYear)}T${initialData.hour_check_in || '15:00'}`);
+
+    setCheckOut(`${formatDateForInput(initialData.check_out || initialData.date, defaultYear)}T${initialData.hour_check_out || '10:00'}`);
     setPaxAssigned(initialData.pax || 0);
     setRoomingList(typeof initialData.rooming_list === 'boolean' ? initialData.rooming_list : false);
     setProForma(typeof initialData.pro_forma === 'boolean' ? initialData.pro_forma : false);
@@ -158,10 +169,12 @@ const HotelModal = ({
   // Si no hay valor para check-in, se calcula automáticamente a partir de la fecha
   useEffect(() => {
     if (date && (!initialData.check_in || initialData.check_in === '')) {
-      setCheckIn(date);
-      const dt = new Date(date);
+      const baseDate = date;
+      setCheckIn(`${baseDate}T${checkIn.split('T')[1] || '15:00'}`);
+      const dt = new Date(baseDate);
       dt.setDate(dt.getDate() + 1);
-      setCheckOut(dt.toISOString().split('T')[0]);
+      const outDate = dt.toISOString().split('T')[0];
+      setCheckOut(`${outDate}T${checkOut.split('T')[1] || '10:00'}`);
     }
   }, [date, initialData.check_in]);
 
@@ -177,12 +190,16 @@ const HotelModal = ({
       setValidationMsg(`El número de PAX asignados no puede superar los disponibles para esta asignación (${availableForEditing}).`);
       return;
     }
+    const [startDate, startTime] = checkIn.split('T');
+    const [endDate, endTime] = checkOut.split('T');
     const payload = {
       id: initialData.assignment_id || '',
       id_hotel: parseInt(hotelId, 10),
       id_group: initialData.id_group || '',
-      start_date: checkIn,
-      end_date: checkOut,
+      start_date: startDate,
+      hour_check_in: startTime,
+      end_date: endDate,
+      hour_check_out: endTime,
       pax: paxVal,
       currency,
       total_to_pay: parseFloat(totalToPay),
@@ -202,7 +219,12 @@ const HotelModal = ({
     } catch (error) {
       // Si el backend retorna un error, lo mostramos en el modal
       if (error && error.detail) {
-        setValidationMsg(error.detail);
+        if (Array.isArray(error.detail)) {
+          // Si es un array, extrae los mensajes y únelos
+          setValidationMsg(error.detail.map(e => e.msg).join(' | '));
+        } else {
+          setValidationMsg(typeof error.detail === 'string' ? error.detail : 'Error al guardar la asignación.');
+        }
       } else {
         setValidationMsg('Error al guardar la asignación.');
       }
@@ -221,6 +243,7 @@ const HotelModal = ({
         date,
         new_pax: newPax,
         id_day,
+        id_city
       });
     }
   };
@@ -278,7 +301,7 @@ const HotelModal = ({
               <Form.Group controlId="formCheckIn">
                 <Form.Label>Check-in</Form.Label>
                 <Form.Control
-                  type="date"
+                  type="datetime-local"
                   value={checkIn}
                   onChange={(e) => setCheckIn(e.target.value)}
                   required
@@ -290,7 +313,7 @@ const HotelModal = ({
               <Form.Group controlId="formCheckOut">
                 <Form.Label>Check-out</Form.Label>
                 <Form.Control
-                  type="date"
+                  type="datetime-local"
                   value={checkOut}
                   onChange={(e) => setCheckOut(e.target.value)}
                   required

@@ -9,6 +9,7 @@ import TransportEditModal from './modals/TransportEditModal';
 import OptionalEditModal from './modals/OptionalEditModal';
 import CreateTypeModal from './modals/CreateTypeModal';
 import CreateTransportModal from './modals/CreateTransportModal';
+import CreatePermitModal    from './modals/CreatePermitModal'
 
 /**
  * CalendarSection
@@ -65,6 +66,28 @@ const CalendarSection = ({ groupId, initialDate }) => {
         setSelectedTransport(null);
       });
   };
+
+
+// Crear permiso
+const handleCreatePermit = payload => {
+  fetch(`${process.env.REACT_APP_API_URL}/groups/${groupId}/permits`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  .then(res => { if (!res.ok) throw res; return res.json(); })
+  .then(() => {
+    calendarRef.current.getApi().refetchEvents();
+    setShowPermitModal(false);
+    setSelectedPermit(null);
+  })
+  .catch(err => {
+    console.error('Error al crear permiso', err);
+    alert('No se pudo crear el permiso.');
+    setShowPermitModal(false);
+    setSelectedPermit(null);
+  });
+};
 
   /** fetchEvents: carga y transforma los eventos */
   const fetchEvents = useCallback((fetchInfo, successCallback, failureCallback) => {
@@ -204,7 +227,22 @@ const CalendarSection = ({ groupId, initialDate }) => {
       <CreateTypeModal show={showCreateType} onHide={() => setShowCreateType(false)} onSelect={handleSelectType} />
 
       {/* Edit Modals */}
-      {selectedPermit && <PermitEditModal show={showPermitModal} onHide={() => setShowPermitModal(false)} onSave={handleSavePermit} event={selectedPermit} />}
+      {/* {selectedPermit && <PermitEditModal show={showPermitModal} onHide={() => setShowPermitModal(false)} onSave={handleSavePermit} event={selectedPermit} />} */}
+      {selectedPermit && (selectedPermit.id === null ? (
+        <CreatePermitModal
+          show={showPermitModal}
+          onHide={() => setShowPermitModal(false)}
+          onCreate={handleCreatePermit}
+          groupId={groupId}
+          creationDate={creationDate}
+        />
+      ) : (
+        <PermitEditModal
+          show={showPermitModal}
+          onHide={() => setShowPermitModal(false)}
+          onSave={handleSavePermit}
+          event={selectedPermit}
+        />))}
       {selectedTransport && (selectedTransport.id === null ? (
         <CreateTransportModal
           show={showTransportModal}

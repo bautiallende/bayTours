@@ -250,6 +250,7 @@ const RoomAssignmentModal = ({ show, onHide, initialData, onSave, availableHotel
       console.log("availableHotels:", availableHotels);
       const selectedHotel = availableHotels.find(h => h.id_hotel.toString() === hotelId);
       setNotes("");
+      console.log("selectedHotel:", selectedHotel);
       if (selectedHotel) {
         setCity(selectedHotel.city || '');
         if (selectedHotel.start_date) {
@@ -329,7 +330,7 @@ const RoomAssignmentModal = ({ show, onHide, initialData, onSave, availableHotel
     const checkOutCombined = combineDateAndTime(checkOutDate, checkOutTime);
     const payload = {
       id: initialData.id,
-      id_hotel_reservation: hotelReservationId || 0,
+      id_hotel_reservation: hotelReservationId || hotelId,
       room_composition_id: initialData.room_composition_id || 0,
       id_days: initialData.id_days || 0,
       separatedClients: confirmedSeparatedClients, // IDs a separar

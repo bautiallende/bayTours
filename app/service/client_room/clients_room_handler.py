@@ -30,24 +30,30 @@ class ClientRoomHandler(BaseHandler):
         days_data.sort(key=lambda x: x.day)
 
         # Inicializar variables para el procesamiento
-        current_city = None
+        current_city_id = None
+        old_city_id = None
         old_city = None
         entry_date = None
         departure_date = None
         day_id = None
         itinerary = 0
-        itinerary_long = days_data.__len__()
-
+        itinerary_long = len(days_data)
+        last_pernocta_index = len(days_data) - 1
 
         # Recorrer el itinerario para crear los registros de las habitaciones
         for day in days_data:
-            old_city = current_city
-            if not current_city:
+            print(f"Procesando día: {day.day} - ID: {day.id} - Ciudad: {day.id_city}")
+            if day.day == 9:
+                print(f"Dia 9: {day.id} - {day.date}")
+            if day.day == 10:
+                print(f"Dia 10: {day.id} - {day.date}")
+            old_city = current_city_id
+            if current_city_id is None:
                 entry_date = datetime.combine(day.date, datetime.strptime("15:00:00", "%H:%M:%S").time())  # Check-in a las 15:00
             
             
 
-            if current_city != day.city and current_city:
+            if current_city_id is not None and day.id_city != current_city_id:
 
                 if new and departure_date:
                     room_composition = RoomsComposition(
@@ -65,7 +71,7 @@ class ClientRoomHandler(BaseHandler):
                         comments = json.dumps([]),
                         )
 
-                    response = await rooms_composition_service.create(db=db, room_data=room_composition)
+                    await rooms_composition_service.create(db=db, room_data=room_composition)
                 
                 # Crear el registro de la habitación
                 room_entry = ClientsRoom(
@@ -79,23 +85,27 @@ class ClientRoomHandler(BaseHandler):
                 db.add(room_entry)
 
 
-                current_city = day.city
+                current_city_id = day.id_city
                 entry_date = datetime.combine(day.date, datetime.strptime("15:00:00", "%H:%M:%S").time())
                 departure_date = datetime.combine(day.date + timedelta(days=1), datetime.strptime("11:00:00", "%H:%M:%S").time())
                 room_comp_id = room_ids_by_day.get(day.id) if room_ids_by_day else None
                 day_id = day.id
                 
             
-            elif day.city == current_city or not current_city:
+            elif day.id_city == current_city_id or not current_city_id:
+                
                 departure_date = datetime.combine(day.date + timedelta(days=1), datetime.strptime("11:00:00", "%H:%M:%S").time())
-                current_city = day.city
+                
+                current_city_id = day.id_city
                 room_comp_id = room_ids_by_day.get(day.id) if room_ids_by_day else None
                 day_id = day.id
                 
             
             itinerary += 1
-            if itinerary == itinerary_long and old_city != current_city:
-
+            at_final_segment = itinerary == itinerary_long - 1
+            is_departure_day = itinerary - 1 == last_pernocta_index + 1
+            print(f"itinerary: {itinerary}, at_final_segment: {at_final_segment}, is_departure_day: {is_departure_day}")
+            if at_final_segment and not is_departure_day and old_city_id != current_city_id:
                 if new:
                     room_composition = RoomsComposition(
                         id = room_comp_id,
@@ -112,7 +122,7 @@ class ClientRoomHandler(BaseHandler):
                         comments = json.dumps([]),
                         )
 
-                    response = await rooms_composition_service.create(db=db, room_data=room_composition)
+                    await rooms_composition_service.create(db=db, room_data=room_composition)
 
 
                 # Crear el registro de la habitación
@@ -207,8 +217,10 @@ class ClientRoomHandler(BaseHandler):
             count_d += 1
             hotel_data = await hotel_reservation_functions.get_reserved_by_group_day(db=db, id_group=id_group, id_day=d)
             
-            
             room_composition_data = await rooms_composition_functions.get_room_composition_by_id_days(db=db, id_days=d)
+
+            if not room_composition_data:
+                return "No se encontraron datos de habitaciones para el día especificado. Si hay mas de 1 hotel asignado, favor de asignar las habitaciones manualmente."
             
             print(f"Datos de habitaciones: {room_composition_data}")
             rooms_config = {'total_hotel': 0}
@@ -269,7 +281,7 @@ class ClientRoomHandler(BaseHandler):
                     client_birth_map = {}
                     for client in group_clients:
                         # Asumimos que en cada registro está presente el id_clients y birth_date
-                        client_birth_map[client.id_clients] = client.birth_date
+                        client_birth_map[client.get("id_clients")] = client.get('birth_date')
 
                     # 4. Obtener los registros de clients_room para el día indicado
                     clients_room = await client_rooms_functions.get_by_id_days(db=db, id_days=d)
@@ -293,8 +305,8 @@ class ClientRoomHandler(BaseHandler):
 
                     # Establecer las horas fijas para check-in y check-out
                     # Se toma la fecha de hotel_data[0].start_date y hotel_data[0].end_date y se asignan las horas
-                    check_in_datetime = datetime.combine(h.start_date, time(15, 0))
-                    check_out_datetime = datetime.combine(h.end_date, time(11, 0))
+                    check_in_datetime = datetime.combine(h.start_date, h.hour_check_in)
+                    check_out_datetime = datetime.combine(h.end_date, h.hour_check_out)
 
                     # 5. Iterar sobre cada grupo
                     for room_comp_id, client_list in grouped.items():

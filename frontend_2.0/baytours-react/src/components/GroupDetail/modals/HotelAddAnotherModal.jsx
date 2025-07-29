@@ -66,13 +66,25 @@ const HotelAddAnotherModal = ({
   assignedPaxTotal = 0,
   onAddAnother,
 }) => {
+  const defaultYear = getYearFromDate(initialData.date);
   // Estados para los campos editables y mostrados
   const [city, setCity] = useState('');
+  const [id_city, setIdCity] = useState(initialData.id_city || '');
   const [date, setDate] = useState('');
   const [hotelId, setHotelId] = useState('');
   const [hotelsList, setHotelsList] = useState([]);
-  const [checkIn, setCheckIn] = useState('');
-  const [checkOut, setCheckOut] = useState('');
+
+// Combinar fecha y hora para check-in
+  const initialCheckInDate = formatDateForInput(initialData.check_in || initialData.date, defaultYear);
+  const initialCheckInTime = initialData.hour_check_in || '15:00';
+  const [checkIn, setCheckIn] = useState(`${initialCheckInDate}T${initialCheckInTime}`);
+
+  // Combinar fecha y hora para check-out
+  const initialCheckOutDate = formatDateForInput(initialData.check_out || initialData.date, defaultYear);
+  const initialCheckOutTime = initialData.hour_check_out || '10:00';
+  const [checkOut, setCheckOut] = useState(`${initialCheckOutDate}T${initialCheckOutTime}`);
+  
+  
   const [roomingList, setRoomingList] = useState(false);
   const [proForma, setProForma] = useState(false);
   const [currency, setCurrency] = useState('EUR');
@@ -93,11 +105,13 @@ const HotelAddAnotherModal = ({
   }, [groupPaxNum, assignedPaxTotal, availablePax]);
 
   // Extraer el año de la fecha principal para usar en el formateo
-  const defaultYear = getYearFromDate(initialData.date);
+  
+  console.log('initialdata en modal extra:', initialData);
 
   // Cuando cambia initialData, actualizamos los estados correspondientes (sin reiniciar city y date)
   useEffect(() => {
     setCity(initialData.city || '');
+    setIdCity(initialData.id_city || '');
     setDate(formatDateForInput(initialData.date, defaultYear));
     setPaxAssigned(initialData.paxAssigned || 0);
     // Reiniciamos los campos que deben limpiarse para agregar nueva asignación
@@ -128,14 +142,14 @@ const HotelAddAnotherModal = ({
       setHotelId('');
       setHotelsList([]);
       // Si checkIn y checkOut ya tienen valor, los dejamos
-      if (!checkIn && date) {
+      if (date) {
         const dt = new Date(date);
         if (!isNaN(dt.getTime())) {
-          setCheckIn(date);
+          setCheckIn(`${date}T${checkIn.split('T')[1] || '15:00'}`);
           dt.setDate(dt.getDate() + 1);
-          const computed = dt.toISOString().split('T')[0];
-          setCheckOut(computed);
-          console.log('Modal: Calculado checkIn:', date, 'checkOut:', computed);
+          const outDate = dt.toISOString().split('T')[0];
+          setCheckOut(`${outDate}T${checkOut.split('T')[1] || '10:00'}`);
+          console.log('Modal: Calculado checkIn:', date, 'checkOut:', outDate);
         } else {
           console.error("Invalid date:", date);
           setCheckIn('');
@@ -154,7 +168,7 @@ const HotelAddAnotherModal = ({
       setValidationMsg('');
       // Forzamos recargar la lista de hoteles si "city" existe
       if (city) {
-        fetch(`${process.env.REACT_APP_API_URL}/hotels/get_hotel_by_city?city=${encodeURIComponent(city)}`)
+        fetch(`${process.env.REACT_APP_API_URL}/hotels/get_hotel_by_city?city=${encodeURIComponent(id_city)}`)
           .then((res) => res.json())
           .then((data) => {
             setHotelsList(data);
@@ -185,7 +199,7 @@ const HotelAddAnotherModal = ({
   // Al tener la ciudad y si el modal está abierto, obtenemos la lista de hoteles disponibles
   useEffect(() => {
     if (city && show) {
-      fetch(`${process.env.REACT_APP_API_URL}/hotels/get_hotel_by_city?city=${encodeURIComponent(city)}`)
+      fetch(`${process.env.REACT_APP_API_URL}/hotels/get_hotel_by_city?city=${encodeURIComponent(id_city)}`)
         .then((res) => res.json())
         .then((data) => {
           setHotelsList(data);
@@ -211,12 +225,16 @@ const HotelAddAnotherModal = ({
       return;
     }
     // Construir el payload
+    const [startDate, startTime] = checkIn.split('T');
+    const [endDate, endTime] = checkOut.split('T');
     const payload = {
       id_hotel: parseInt(hotelId, 10),
       id_group: initialData.id_group || '',
       id_day: initialData.id_day || '',
-      start_date: checkIn || null,
-      end_date: checkOut || null,
+      start_date: startDate || null,
+      hour_check_in: startTime,
+      end_date: endDate || null,
+      hour_check_out: endTime,
       pax: paxVal,
       currency,
       total_to_pay: parseFloat(totalToPay),
@@ -259,6 +277,7 @@ const HotelAddAnotherModal = ({
         date,
         paxAssigned: newTotal, // Enviamos el total acumulado
         id_day: initialData.id_day || '',
+        id_city: initialData.id_city || '',
       });
     }
   };
@@ -315,7 +334,7 @@ const HotelAddAnotherModal = ({
               <Form.Group controlId="formCheckIn">
                 <Form.Label>Check-in</Form.Label>
                 <Form.Control
-                  type="date"
+                  type="datetime-local"
                   value={checkIn}
                   onChange={(e) => setCheckIn(e.target.value)}
                   required
@@ -326,7 +345,7 @@ const HotelAddAnotherModal = ({
               <Form.Group controlId="formCheckOut">
                 <Form.Label>Check-out</Form.Label>
                 <Form.Control
-                  type="date"
+                  type="datetime-local"
                   value={checkOut}
                   onChange={(e) => setCheckOut(e.target.value)}
                   required

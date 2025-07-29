@@ -64,16 +64,17 @@ async def get_hotel_reservation(db:AsyncSession, id_group:str, filters:dict=None
 async def check_day(db:AsyncSession, start_date:date, days:int, id_hotel:str, id_group:str):
     
     hotel_info = await hotel_service.get_one(db=db, id_hotel=id_hotel)
+    hotel_city_id = hotel_info[0].id_city
     
     day_info = await days_service.get_all(db=db, id_group=id_group)
 
-    for day in range(0, days):
-        current_date = start_date + timedelta(days=day)
+    for offset in range(days):
+        current_date = start_date + timedelta(days=offset)
         
         # Verificar si la ciudad del grupo en current_date coincide con la ciudad del hotel
         for day_config in day_info:
             if day_config.date == current_date:
-                if (day_config.city).lower() != (hotel_info[0].city).lower():
+                if day_config.id_city != hotel_city_id:
                     return False  # La ciudad no coincide, no es posible asignar el hotel
 
     return True  # Todas las ciudades coinciden, es posible asignar el hotel

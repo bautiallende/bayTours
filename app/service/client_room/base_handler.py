@@ -58,6 +58,7 @@ class BaseHandler():
         clients_room = await clients_room_functions.get_by_room_composition_id(db=db, room_composition_id=client_room_data.room_composition_id)
         for client in clients_room:
             print("clients_room", client.__dict__ ) 
+        # TODO: verificar aca por que no funiona del todo bien, toma 1 solo cliente en lugar de dos en una doble
         clients_in_room = {"client_id": client.client_id for client in clients_room }
         print("clients_in_room", clients_in_room)
 
@@ -66,7 +67,7 @@ class BaseHandler():
             # aca debemos crear la distribucion nueva, dejar que se guarde el cuarto para ese dia pero crear la estuctura nueva del dia faltante
             actual_days = await days_functions.get_day_by_id_days(db=db, id_days=client_room_data.id_days)
             if actual_days:
-                all_days = await days_functions.get_day_by_group_and_city(db=db, id_group=actual_days.id_group, city=actual_days.city)
+                all_days = await days_functions.get_day_by_group_and_city(db=db, id_group=actual_days.id_group, id_city=actual_days.id_city)
                 if all_days:
                     for day in all_days:
                         print("\nday", day.__dict__)
@@ -132,7 +133,8 @@ class BaseHandler():
             partial_pax = 0
             for p in rooms_date:
                 print("p", p)
-                if p.get('id_hotel', None) == hotel_info[0].id_hotel and p.get('id_clients', None) != clients_in_room.get('client_id', None):
+                hotel_id = hotel_info[0].id_hotel if hotel_info else None
+                if p.get('id_hotel', None) == hotel_id and p.get('id_clients', None) != clients_in_room.get('client_id', None):
                     partial_pax += 1
 
             if (total_pax <= partial_pax) or (int(total_pax) < (int(partial_pax) + int(room_capacity))):

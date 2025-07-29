@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..dependencies import get_db
 from app.service import days as days_service
+from app.service import cities as cities_service
 
 
 
@@ -28,3 +29,23 @@ async def get_day_id(id_group:str ,db:Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="No hay día para este grupo")
     return response
 
+
+@router.get('/get_days_by_group_and_date')
+async def get_days_by_group_and_date(
+    id_group: str,
+    date: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Obtiene los días asociados a un grupo y una fecha específica.
+    """
+    response = await days_service.get_date_by_group_and_date(db=db, id_group=id_group, date=date)
+
+    print(response.__dict__)
+    city =  await cities_service.get_city_by_name(db=db, name=response.city)
+
+    print(city)    
+    if not response:
+        raise HTTPException(status_code=404, detail="No se encontraron días para el grupo y la fecha especificados")
+    
+    return response

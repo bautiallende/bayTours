@@ -389,6 +389,7 @@ useEffect(() => { fetchRoomAssignments(); }, [fetchRoomAssignments]);
       if (!showHotelAddAnotherModal) {
         return {
           city: assignmentData.city,
+          id_city: assignmentData.id_city,
           date: assignmentData.date,
           id_group: groupData.id_group,
           new_pax: Number(assignmentData.new_pax || 0),
@@ -397,6 +398,7 @@ useEffect(() => { fetchRoomAssignments(); }, [fetchRoomAssignments]);
       } else {
         return {
           city: assignmentData.city,
+          id_city: assignmentData.id_city,
           date: assignmentData.date,
           id_group: groupData.id_group,
           new_pax: Number(assignmentData.paxAssigned  || 0),

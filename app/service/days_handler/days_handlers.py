@@ -76,7 +76,7 @@ class DaysHandler(BaseHandler):
                 id_group=id_group,
                 day=day + 1,  # El día dentro del itinerario, comenzando desde 1
                 date=current_date,
-                city=city,
+                id_city=city_id,
                 ferry=ferry
             )
 
