@@ -15,6 +15,7 @@ const CreatePermitModal = ({ show, onHide, onCreate, groupId, creationDate }) =>
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
+    id_permit:'',
     id_city: '',
     id_transport: '',
     valid_from: creationDate || '',
@@ -46,11 +47,11 @@ const CreatePermitModal = ({ show, onHide, onCreate, groupId, creationDate }) =>
 
   // Obtener id_transport desde grupo
   useEffect(() => {
-    fetch(`${process.env.REACT_APP_API_URL}/groups/get_group?id_group=${groupId}`)
+    fetch(`${process.env.REACT_APP_API_URL}/groups/get_group_by_id?id_group=${groupId}`)
       .then(res => { if (!res.ok) throw new Error('Network error fetching group'); return res.json(); })
       .then(group => {
-        if (group?.transport_id) {
-          setFormData(prev => ({ ...prev, id_transport: group.transport_id }));
+        if (group?.id_transport) {
+          setFormData(prev => ({ ...prev, id_transport: group.id_transport }));
         }
       })
       .catch(err => console.error('Error fetching group info', err));
@@ -73,9 +74,11 @@ const CreatePermitModal = ({ show, onHide, onCreate, groupId, creationDate }) =>
     // Validación básica
     if (!formData.id_city || !formData.id_transport || !formData.valid_from || !formData.valid_to) {
       setError('Error interno: falta id_city o id_transport o fechas.');
+      console.error('Validation error: missing required fields', formData);
       return;
     }
     const payload = {
+      id_permit:'',
       id_group: groupId,
       id_city: formData.id_city,
       id_transport: formData.id_transport,
@@ -104,16 +107,8 @@ const CreatePermitModal = ({ show, onHide, onCreate, groupId, creationDate }) =>
         {loading && <Spinner animation="border" className="mb-2" />}
         {error && <Alert variant="danger">{error}</Alert>}
         <Form>
-          <Row>
-            <Col md={6} className="mb-3">
-              <Form.Label>Ciudad (ID: {formData.id_city})</Form.Label>
-              <Form.Control readOnly value={formData.id_city} />
-            </Col>
-            <Col md={6} className="mb-3">
-              <Form.Label>Transporte (ID: {formData.id_transport})</Form.Label>
-              <Form.Control readOnly value={formData.id_transport} />
-            </Col>
-          </Row>
+          <Form.Control type="hidden" name="id_city" value={formData.id_city} />
+          <Form.Control type="hidden" name="id_transport" value={formData.id_transport} />
           <Row>
             <Col md={6} className="mb-3">
               <Form.Label>Fecha desde</Form.Label>

@@ -163,6 +163,13 @@ async def group_data(id_group:str , table:str, db: Session = Depends(get_db), fi
         raise HTTPException(status_code=404, detail="Group not found")
     return group_data
 
+@router.get('/get_group_by_id')
+async def get_group_by_id(id_group: str, db: Session = Depends(get_db)):
+    group_data = await group_service.get_group(db=db, id_group=id_group)
+    if not group_data:
+        raise HTTPException(status_code=404, detail="Group not found")
+    return group_data
+
 
 @router.get('/get_possible_packages')
 async def get_possible_packages(id_group:str, db: Session = Depends(get_db)):
