@@ -8,3 +8,6 @@ async def get_optionals(db: AsyncSession, id_stage:int, id_optional:int=None):
     return response
 
 
+async def get_optionals_by_city(db: AsyncSession, id_city:int):
+    response = await optionals_functions.get_by_city(db=db, id_city=id_city)
+    return response

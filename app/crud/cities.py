@@ -20,6 +20,7 @@ from ..models.cities import City
 from ..schemas.cities import CityCreate, CityUpdate
 from ..utils.geo import enrich_geo_data  # helper to rellenar region, etc.
 
+
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
@@ -127,10 +128,19 @@ async def delete_city(db: AsyncSession, city_id: int) -> None:
     db.commit()
 
 
-async def get_city_id(db: AsyncSession, city:str) -> City | None:
+async def get_city_id(db: AsyncSession, city:int) -> City | None:
     """
     Retrieve a city by its name, case-insensitive.
     """
-    stmt = select(City).where(func.lower(City.name) == city.lower())
+    stmt = select(City).where(func.lower(City.id) == city)
     result = db.execute(stmt)
     return result.scalar_one_or_none()
+
+
+async def get_countries(db: AsyncSession) -> Sequence[str]:
+    """
+    Retrieve all unique countries from the cities.
+    """
+    stmt = select(City.country).distinct()
+    result = db.execute(stmt)
+    return [row[0] for row in result.fetchall() if row[0] is not None]

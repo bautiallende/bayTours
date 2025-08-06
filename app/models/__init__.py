@@ -16,6 +16,7 @@ from .hotel_reservation import HotelReservation
 from .hotel import Hotel
 from .hotels_room import HotelsRooms
 from .local_guides import LocalGuides
+from .local_guide_tariffs import LocalGuideTariff
 from .operations import Operations
 from .optional_purchase import OptionalPurchase
 from .optionals import Optionals
@@ -50,6 +51,7 @@ __all__ = [
     "Hotel",
     "HotelsRooms",
     "LocalGuides",
+    "LocalGuideTariff",
     "Operations",
     "OptionalPurchase",
     "Optionals",
@@ -61,5 +63,5 @@ __all__ = [
     "TransportCompany",
     "Transport",
     "DayTransport",
-    "GroupCityPermit"
+    "GroupCityPermit",
 ]

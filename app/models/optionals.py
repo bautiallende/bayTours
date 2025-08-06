@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, DateTime, Time, Float
+from sqlalchemy import Column, Integer, String, DateTime, Time, Float, ForeignKey
+from sqlalchemy.orm import relationship
 from ..database import Base
 
 class Optionals(Base):
@@ -12,7 +13,9 @@ class Optionals(Base):
     minor_price = Column(Float)
     min_pax = Column(Integer)
     max_pax = Column(Integer)
-    city = Column(String(255))
+    id_city = Column(Integer, ForeignKey("cities.id"), index=True, nullable=True)
     update_datetime = Column(DateTime)
     update_user_id = Column(String(255))
+
+    city = relationship("City", lazy="joined")
 

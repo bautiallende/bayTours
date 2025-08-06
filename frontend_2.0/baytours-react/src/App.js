@@ -7,6 +7,7 @@ import Home from "./pages/Home";            // <-- Asegúrate que Home.js tenga 
 import Groups from "./pages/Groups";
 import GroupDetail from "./pages/GroupDetail";
 import Layout from "./components/Layout";   // <-- Asegúrate que Layout.js tenga export default Layout;
+import LocalGuidesList from "./pages/LocalGuidesList"; 
 
       
 
@@ -26,6 +27,7 @@ const App = () => {
           <Route index element={<Home />} />
           <Route path="grupos" element={<Groups />} />
           <Route path="grupo/:id" element={<GroupDetail />} />
+          <Route path="guias/locales" element={<LocalGuidesList />} />
           {/* Otras rutas */}
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />

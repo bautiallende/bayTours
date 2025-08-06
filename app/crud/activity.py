@@ -4,6 +4,7 @@ from app.models.activity import Activity
 from app.models.days import Days
 from app.models.optionals import Optionals
 from app.models.local_guides import LocalGuides
+from app.models.cities import City
 from app.schemas.activity import ActivityUpdate
 from sqlalchemy.future import select
 from sqlalchemy import and_
@@ -76,19 +77,21 @@ async def get_by_group_id(db: AsyncSession, id_group:str, id_optional:int|None):
 
 
 async def get_filters_by_group_id(db: AsyncSession, id_group:str, id_optional:int|None):
-    if id_optional:
-        result = db.execute(select(Activity).join(Days, Days.id == Activity.id_days).where(and_(Days.id_group == id_group, Activity.id_optional == id_optional)))
-    else:
-        result = db.execute(
-            select(Activity, Optionals.name).
-            join(Days, Days.id == Activity.id_days, isouter=True).
-            join(Optionals, Activity.id_optional == Optionals.id_optional, isouter=True).
-            where(Days.id_group == id_group).order_by(Activity.date))
-    
-    activity_data = result.fetchall()
-
-
-    return [list(r) for r in activity_data] 
+    try:
+        if id_optional:
+            stmt = (select(Activity).join(Days, Days.id == Activity.id_days).where(and_(Days.id_group == id_group, Activity.id_optional == id_optional)))
+        else:
+            stmt = (
+                select(Activity, Optionals.name).
+                join(Days, Days.id == Activity.id_days, isouter=True).
+                join(Optionals, Activity.id_optional == Optionals.id_optional, isouter=True).
+                where(Days.id_group == id_group).order_by(Activity.date))
+        
+        rows = (db.execute(stmt)).mappings().all()     # filas de tuplas simples
+        return [list(row) for row in rows] 
+    except Exception as e:
+        print(f'Error in get_filters_by_group_id: {e}')
+        
 
 
 async def get_calendar_activities(
@@ -103,10 +106,11 @@ async def get_calendar_activities(
     aplicando filtros de grupo, rango de fechas y opcional si se indica.
     """
     stmt = (
-        select(Activity, Optionals.id_optional, Optionals.name.label("optional_name"),LocalGuides.id_local_guide ,LocalGuides.name.label("local_guide"), LocalGuides.surname.label("local_guide_surname"), LocalGuides.phone , Optionals.city)
+        select(Activity, Optionals.id_optional, Optionals.name.label("optional_name"),LocalGuides.id_local_guide ,LocalGuides.name.label("local_guide"), LocalGuides.surname.label("local_guide_surname"), LocalGuides.phone , City.name.label("city"),)
         .join(Days, Days.id == Activity.id_days)
         .outerjoin(Optionals, Activity.id_optional == Optionals.id_optional)
         .outerjoin(LocalGuides, Activity.id_local_guide == LocalGuides.id_local_guide)
+        .outerjoin(City, City.id == Optionals.id_city)  
         .where(Days.id_group == id_group)
     )
 

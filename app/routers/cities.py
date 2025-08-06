@@ -31,16 +31,6 @@ async def create_city(
     return city
 
 
-@router.get("/", response_model=List[CityRead])
-async def list_cities(
-    country: str | None = None,
-    db: Session = Depends(get_db),
-):
-    """Lista ciudades; se puede filtrar por `?country=ES`."""
-    cities: Sequence = await city_service.list_cities(db, country=country)
-    return list(cities)
-
-
 @router.patch("/{city_id}", response_model=CityRead)
 async def update_city(
     city_id: int,
@@ -58,3 +48,26 @@ async def delete_city(
 ):
     await city_service.delete_city(db, city_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/", response_model=List[CityRead])
+async def list_cities(
+    country: str | None = None,
+    db: Session = Depends(get_db),
+):
+    """Lista ciudades; se puede filtrar por `?country=ES`."""
+    cities: Sequence = await city_service.list_cities(db, country=country)
+    return list(cities)
+
+
+@router.get("/countries")
+async def get_countries(
+    db: Session = Depends(get_db),
+):
+    """Devuelve una lista de países con ciudades."""
+    countries = await city_service.get_countries(db)
+    if not countries:
+        raise HTTPException(status_code=404, detail="No countries found")
+    return countries
+
+

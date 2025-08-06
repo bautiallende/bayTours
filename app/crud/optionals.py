@@ -13,3 +13,8 @@ async def get_optional(db: AsyncSession, id_stage:int, id_optional:int=None):
     optional = result.scalars().all()
 
     return optional
+
+async def get_by_city(db:AsyncSession, id_city:int):
+    result = db.execute(select(Optionals).where(Optionals.id_city==id_city))
+    operations = result.scalars().all()
+    return operations

@@ -8,7 +8,8 @@ from .routers import (
     transport, 
     operations, 
     assistant, 
-    responsable_hotels, 
+    responsable_hotels,
+    optionals, 
     optionals_purchase, 
     days, 
     activity, 
@@ -47,6 +48,7 @@ app.add_middleware(
 app.include_router(upload.router)
 app.include_router(group.router)
 app.include_router(clients.router)
+app.include_router(optionals.router)
 app.include_router(optionals_purchase.router)
 app.include_router(operations.router)
 app.include_router(hotel.router)

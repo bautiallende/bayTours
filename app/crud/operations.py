@@ -14,3 +14,4 @@ async def get_one(db:AsyncSession, id_operation:str):
     result = db.execute(select(Operations).where(Operations.id_operation==id_operation))
     operation = result.scalar_one_or_none()
     return operation
+

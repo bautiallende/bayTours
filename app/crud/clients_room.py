@@ -111,7 +111,7 @@ async def get_room_by_id_group_and_city(db:AsyncSession, id_days:List[str],  fil
             query = query.filter(Hotel.hotel_name == filters['hotel'])
         
         if 'city' in filters and filters['city']:
-            query = query.filter(Hotel.city == filters['city'])
+            query = query.filter(City.name == filters['city'])
         
         if 'room_type' in filters and filters['room_type']:
             value = filters["room_type"]
