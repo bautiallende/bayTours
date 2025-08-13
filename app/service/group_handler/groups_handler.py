@@ -70,7 +70,7 @@ class GroupsHandler(GroupHandler):
             'id_group': id_group,
             "reason":''
             })
-        response = await guide_availability_functions.update_guide_availability(db=db, slot=slot)
+        response = await guide_availability_functions.add_slot(db=db, slot=slot)
         new_guide = await guide_service.get_guide(db=db, id_guide=id_guide)
 
         return new_guide

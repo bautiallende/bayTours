@@ -1,22 +1,51 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.guide_availability import GuideAvailability
-from app.models.guides import Guides
 from sqlalchemy.future import select
 from datetime import date
-from sqlalchemy import select, and_, or_, not_
+from sqlalchemy import select, and_, or_, not_, delete
 from sqlalchemy.orm import aliased
+from sqlalchemy.exc import NoResultFound
+from app.models.guide_availability import GuideAvailability
+from app.models.guides import Guides
+from app.schemas.guides import GuideAvailabilityUpdate
 
-async def create(db:AsyncSession, slot:GuideAvailability):
+
+
+
+async def create_slot(db: AsyncSession, slot: GuideAvailability):
     db.add(slot)
     db.commit()
+    db.refresh(slot)
     return slot
 
 
+async def list_slots(db: AsyncSession, id_guide: int):
+    res = db.execute(
+        select(GuideAvailability).where(GuideAvailability.id_guide == id_guide)
+    )
+    return res.scalars().all()
 
-async def get_slots(db:AsyncSession, id_guide:str):
-    result = db.execute(select(GuideAvailability).where(GuideAvailability.id_guide == id_guide))
-    slots = result.scalars().all()
-    return slots
+
+async def update_slot(db: AsyncSession, id_availability: int, payload: GuideAvailabilityUpdate,):
+    slot = await db.get(GuideAvailability, id_availability)
+    if slot is None:
+        raise NoResultFound
+
+    for k, v in payload.model_dump(exclude={"id_availability"}).items():
+        setattr(slot, k, v)
+
+    await db.commit()
+    await db.refresh(slot)
+    return slot
+
+
+# async def delete_slot(db: AsyncSession, id_availability: int):
+#     db.execute(
+#         delete(GuideAvailability).where(
+#             GuideAvailability.id_availability == id_availability
+#         )
+#     )
+#     db.commit()
+
 
 
 async def get_available_guides(starting_date: date, ending_date: date, db: AsyncSession):
@@ -28,8 +57,8 @@ async def get_available_guides(starting_date: date, ending_date: date, db: Async
         select(GuideAvailabilityAlias.id_guide)
         .where(
             and_(
-                GuideAvailabilityAlias.start_date < ending_date,
-                GuideAvailabilityAlias.end_date > starting_date
+                GuideAvailabilityAlias.start_date <= ending_date,
+                GuideAvailabilityAlias.end_date >= starting_date
             )
         )
         .subquery()

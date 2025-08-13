@@ -8,6 +8,8 @@ import Groups from "./pages/Groups";
 import GroupDetail from "./pages/GroupDetail";
 import Layout from "./components/Layout";   // <-- Asegúrate que Layout.js tenga export default Layout;
 import LocalGuidesList from "./pages/LocalGuidesList"; 
+import TourLeadersList from "./pages/TourLeadersList"; 
+import TourLeaderProfile from "./components/TourLeaders/TourLeaderProfile"; 
 
       
 
@@ -28,6 +30,9 @@ const App = () => {
           <Route path="grupos" element={<Groups />} />
           <Route path="grupo/:id" element={<GroupDetail />} />
           <Route path="guias/locales" element={<LocalGuidesList />} />
+          <Route path="guias/tour-leaders" element={<TourLeadersList />} />
+          <Route path="/tour-leaders/:id" element={<TourLeaderProfile />} />
+
           {/* Otras rutas */}
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />

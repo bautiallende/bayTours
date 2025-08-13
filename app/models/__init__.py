@@ -12,6 +12,7 @@ from .ferry import Ferry
 from .group import Group
 from .guide_availability import GuideAvailability
 from .guides import Guides
+from .guide_evaluations import GuideEvaluation
 from .hotel_reservation import HotelReservation
 from .hotel import Hotel
 from .hotels_room import HotelsRooms
@@ -47,6 +48,7 @@ __all__ = [
     "Group",
     "GuideAvailability",
     "Guides",
+    "GuideEvaluation",
     "HotelReservation",
     "Hotel",
     "HotelsRooms",

@@ -1,52 +1,48 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from app.schemas.guides import GuideBase, Guide
+from sqlalchemy.orm import selectinload
+from sqlalchemy.exc import IntegrityError, NoResultFound
+from app.models.circuits import Circuit
+from app.schemas.guides import GuideCreate, GuideUpdate
 from app.models.guides import Guides
 from app.models.group import Group
 
 
 
 
-async def create(db:AsyncSession, guides_data:GuideBase):
-    new_guide = Guides(**guides_data.dict())
-    db.add(new_guide)
-    db.commit()
-    db.refresh(new_guide)
-    return new_guide
-
-
-
-async def update(db:AsyncSession, guide_data:Guide):
-
-    result = db.execute(select(Guides).where(guide_data.id_guide == Guides.id_guide))
-    guide = result.scalar_one_or_none()
-
-    if not guide:
-        return {"detail": "Guide not found"}
-    
-    if guide_data.id_guide:
-        guide.id_guide = guide_data.id_guide
-    if guide_data.name:
-        guide.name = guide_data.name
-    if guide_data.surname:
-        guide.surname = guide_data.surname
-    if guide_data.phone:
-        guide.phone = guide_data.phone
-    if guide_data.birth_date:
-        guide.birth_date = guide_data.birth_date
-    if guide_data.mail:
-        guide.mail = guide_data.mail
-    if guide_data.passaport:
-        guide.passaport = guide_data.passaport
-    if isinstance(guide_data.active, bool):
-        guide.active = guide_data.active
-    if guide_data.comment:
-        guide.comment = guide_data.comment
-
-    db.commit()
-    db.refresh(guide)
+async def create_guide(db: AsyncSession, payload: GuideCreate) -> Guides:
+    guide = Guides(**payload.model_dump(exclude={"availability"}))
+    db.add(guide)
+    try:
+        db.commit()
+        db.refresh(guide)
+    except IntegrityError:
+        db.rollback()
+        raise
     return guide
-    
+
+
+
+
+async def update_guide(db: AsyncSession, id_guide: int, payload: GuideUpdate) -> Guides:
+    result = db.execute(select(Guides).where(Guides.id_guide == id_guide))
+    guide = result.scalar_one_or_none()
+    if not guide:
+        raise NoResultFound
+
+    for field, value in payload.model_dump(
+        exclude={"availability"}, exclude_none=True
+    ).items():
+        setattr(guide, field, value)
+
+    try:
+        db.commit()
+        db.refresh(guide)
+    except IntegrityError:
+        db.rollback()
+        raise
+    return guide
+
 
 
 async def get_guide_group(id_group:str, db:AsyncSession):
@@ -56,7 +52,104 @@ async def get_guide_group(id_group:str, db:AsyncSession):
 
 
 
-async def get_guide(db:AsyncSession, id_guide:str):
-    result = db.execute(select(Guides).where(Guides.id_guide == id_guide))
+async def get_guide(db: AsyncSession, id_guide: int | str):
+    # 1) Ficha con relaciones cargadas
+    stmt = (
+        select(Guides)
+        .where(Guides.id_guide == id_guide)
+        .options(
+            selectinload(Guides.availability),
+            selectinload(Guides.evaluations),
+        )
+    )
+    result = db.execute(stmt)
     guide = result.scalar_one_or_none()
+    if guide is None:
+        return None
+
+    # 2) Recolectar group_ids de availability
+    group_ids = [
+        s.id_group for s in getattr(guide, "availability", []) if getattr(s, "id_group", None)
+    ]
+    if not group_ids:
+        return guide
+
+    # 3) group_id -> circuit_id
+    res = db.execute(
+        select(Group.id_group, Group.circuit).where(Group.id_group.in_(group_ids))
+    )
+    group_to_circuit = {row.id_group: row.circuit for row in res.all()}
+
+    # 4) circuit_id -> circuit_name
+    circuit_ids = [cid for cid in group_to_circuit.values() if cid is not None]
+    circuit_names = {}
+    if circuit_ids:
+        res2 = db.execute(
+            select(Circuit.id, Circuit.name).where(Circuit.id.in_(circuit_ids))
+        )
+        circuit_names = {row.id: row.name for row in res2.all()}
+
+    # 5) Anotar en cada slot (los lee tu GuideAvailabilityRead)
+    for slot in getattr(guide, "availability", []):
+        gid = getattr(slot, "id_group", None)
+        if gid:
+            cid = group_to_circuit.get(gid)
+            slot.circuit_id = cid
+            slot.circuit_name = circuit_names.get(cid) if cid is not None else None
+        else:
+            slot.circuit_id = None
+            slot.circuit_name = None
+
     return guide
+
+
+async def get_all_guides(db: AsyncSession):
+    # 1) Guías con relaciones cargadas (una sola ronda a la BD)
+    stmt = (
+        select(Guides)
+        .options(
+            selectinload(Guides.availability),   # slots
+            selectinload(Guides.evaluations),    # evaluaciones
+        )
+    )
+    result = db.execute(stmt)
+    guides = result.scalars().all()
+
+    # 2) Recolectar todos los id_group presentes en availability
+    group_ids = {
+        slot.id_group
+        for g in guides
+        for slot in getattr(g, "availability", [])
+        if getattr(slot, "id_group", None)
+    }
+
+    if group_ids:
+        # 3) group_id -> circuit_id
+        res = db.execute(
+            select(Group.id_group, Group.circuit).where(Group.id_group.in_(list(group_ids)))
+        )
+        group_to_circuit = {row.id_group: row.circuit for row in res.all()}
+
+        # 4) circuit_id -> circuit_name
+        circuit_ids = {cid for cid in group_to_circuit.values() if cid is not None}
+        circuit_names = {}
+        if circuit_ids:
+            res2 = db.execute(
+                select(Circuit.id, Circuit.name).where(Circuit.id.in_(list(circuit_ids)))
+            )
+            circuit_names = {row.id: row.name for row in res2.all()}
+
+        # 5) Anotar atributos efímeros en cada slot (los leerá tu Pydantic)
+        for g in guides:
+            for slot in getattr(g, "availability", []):
+                gid = getattr(slot, "id_group", None)
+                if gid:
+                    cid = group_to_circuit.get(gid)
+                    # estos campos deben existir en tu GuideAvailabilityRead
+                    slot.circuit_id = cid
+                    slot.circuit_name = circuit_names.get(cid) if cid is not None else None
+                else:
+                    slot.circuit_id = None
+                    slot.circuit_name = None
+
+    return guides
