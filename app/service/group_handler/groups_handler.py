@@ -9,6 +9,7 @@ from app.service import days as days_services
 from app.crud import client_group as client_group_functions
 from app.service import guide_availability as guide_availability_functions
 from app.schemas.guide_availability import PeriodAllocation
+from app.schemas.guides import GuideAvailabilityCreate, AvailabilityStatus
 from app.service import guide as guide_service
 from app.service import transport as transport_services
 from app.service import hotel_reservation as hotel_reservation_service
@@ -63,14 +64,15 @@ class GroupsHandler(GroupHandler):
 
         result = await group_functions.update_group(db=db, group_data=group_data)
 
-        slot = PeriodAllocation(**{
-            "id_guide": id_guide,
+        slot = GuideAvailabilityCreate(**{
+            "id_group": id_group,
             "start_date": group_data.start_date.strftime('%Y-%m-%d'),
             "end_date": group_data.end_date.strftime('%Y-%m-%d'),
-            'id_group': id_group,
-            "reason":''
+            "notes":'',
+            'modified_by':'system',
+            'status': AvailabilityStatus.tentative
             })
-        response = await guide_availability_functions.add_slot(db=db, slot=slot)
+        response = await guide_availability_functions.add_slot(db=db, id_guide=id_guide, payload=slot)
         new_guide = await guide_service.get_guide(db=db, id_guide=id_guide)
 
         return new_guide

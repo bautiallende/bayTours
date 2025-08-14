@@ -45,6 +45,7 @@ class GuideEvaluationsHandler:
         id_eval: int,
         payload: GuideEvaluationUpdate,
     ):
+        # validar existencia de la evaluación
         try:
             return await eval_crud.update_evaluation(db=db, id_eval=id_eval, payload=payload)
         except NoResultFound:

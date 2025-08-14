@@ -36,12 +36,6 @@ async def create_guides(guides_data:GuideCreate, db:Session = Depends(get_db)):
     return result
 
 
-@router.put("")
-async def update_guides(guide_data:GuideUpdate, db:Session = Depends(get_db)):
-    result = await guide_service.update(guide_data=guide_data, db=db)
-    if not result:
-        raise HTTPException(status_code=404, detail="Guide not found")
-    return result
 
 # ────────────────────────────────────────────────────────────────
 # 2.  Modificación (datos + availability en un solo payload)
@@ -54,7 +48,7 @@ async def update_guide(id_guide: int, payload: GuideUpdate, db: Session = Depend
 # ────────────────────────────────────────────────────────────────
 # 3.  GET ficha completa (info + availability + evaluations)
 # ────────────────────────────────────────────────────────────────
-@router.get("/{id_guide}", response_model=GuideRead,)
+@router.get("/by_id/{id_guide}", response_model=GuideRead,)
 async def get_guide(id_guide: int, db:Session = Depends(get_db),):
     return await guide_service.get_guide(db=db, id_guide=id_guide)
 

@@ -1,7 +1,7 @@
 from datetime import datetime, date
 from sqlalchemy import (
     Column, Integer, String, Boolean, Float, Date, DateTime,
-    Enum, ForeignKey, JSON, CHAR
+    Enum, ForeignKey, JSON, CHAR, TEXT
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -39,7 +39,7 @@ class Guides(Base):
     commission_onsite    = Column(Float, default=0)       # %
     commission_pretour   = Column(Float, default=0)       # %
 
-    comment        = Column(String(255))
+    comment        = Column(TEXT)
     active          = Column(Boolean, default=True)
 
     created_at      = Column(DateTime, server_default=func.now())

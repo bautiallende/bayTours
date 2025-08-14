@@ -2,6 +2,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError, NoResultFound
+import json
+from datetime import datetime
 from app.models.circuits import Circuit
 from app.schemas.guides import GuideCreate, GuideUpdate
 from app.models.guides import Guides
@@ -12,6 +14,8 @@ from app.models.group import Group
 
 async def create_guide(db: AsyncSession, payload: GuideCreate) -> Guides:
     guide = Guides(**payload.model_dump(exclude={"availability"}))
+    comments = [payload.comment] if payload.comment else []
+    guide.comment = json.dumps(comments)  # Inicializar como lista vacía
     db.add(guide)
     try:
         db.commit()
@@ -30,8 +34,15 @@ async def update_guide(db: AsyncSession, id_guide: int, payload: GuideUpdate) ->
     if not guide:
         raise NoResultFound
 
+    # Manejar la lista de comentarios
+    existing_comments = json.loads(guide.comment) if guide.comment else []
+    if payload.comment and payload.comment.strip():  # Verificar si hay un nuevo comentario y no está vacío o solo contiene espacios
+        new_comment = f'({datetime.now().strftime("%d/%m/%y %H:%M")}) - {payload.comment}'
+        existing_comments.insert(0, new_comment)
+        guide.comment = json.dumps(existing_comments)
+        
     for field, value in payload.model_dump(
-        exclude={"availability"}, exclude_none=True
+        exclude={"availability", "comment"}, exclude_none=True
     ).items():
         setattr(guide, field, value)
 

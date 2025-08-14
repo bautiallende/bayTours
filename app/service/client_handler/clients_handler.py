@@ -54,6 +54,7 @@ class ClientsHandler(BaseHandler):
         id_common_room = None
         id_old_room = None
         new = False
+        current_room_ids_by_day = {}
 
 
         for _, row in df.iterrows():

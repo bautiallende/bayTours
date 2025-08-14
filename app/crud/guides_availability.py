@@ -4,6 +4,8 @@ from datetime import date
 from sqlalchemy import select, and_, or_, not_, delete
 from sqlalchemy.orm import aliased
 from sqlalchemy.exc import NoResultFound
+import json
+from datetime import datetime
 from app.models.guide_availability import GuideAvailability
 from app.models.guides import Guides
 from app.schemas.guides import GuideAvailabilityUpdate
@@ -26,15 +28,22 @@ async def list_slots(db: AsyncSession, id_guide: int):
 
 
 async def update_slot(db: AsyncSession, id_availability: int, payload: GuideAvailabilityUpdate,):
-    slot = await db.get(GuideAvailability, id_availability)
+    slot = db.get(GuideAvailability, id_availability)
     if slot is None:
         raise NoResultFound
 
-    for k, v in payload.model_dump(exclude={"id_availability"}).items():
+        # Manejar la lista de comentarios
+    existing_comments = json.loads(slot.notes) if slot.notes else []
+    if payload.notes and payload.notes.strip():  # Verificar si hay un nuevo comentario y no está vacío o solo contiene espacios
+        new_comment = f'({datetime.now().strftime("%d/%m/%y %H:%M")}) - {payload.notes}'
+        existing_comments.insert(0, new_comment)
+        slot.notes = json.dumps(existing_comments)
+
+    for k, v in payload.model_dump(exclude={"id_availability", 'notes'}).items():
         setattr(slot, k, v)
 
-    await db.commit()
-    await db.refresh(slot)
+    db.commit()
+    db.refresh(slot)
     return slot
 
 
@@ -77,8 +86,8 @@ async def get_available_guides(starting_date: date, ending_date: date, db: Async
     return available_guides
 
 
-async def delete_slot(db:AsyncSession, id_guide:int, id_group:str):
-    slot = db.query(GuideAvailability).filter(GuideAvailability.id_guide == id_guide, GuideAvailability.id_group == id_group).first()
+async def delete_slot(db:AsyncSession, id_availability:int):
+    slot = db.query(GuideAvailability).filter(GuideAvailability.id_availability == id_availability).first()
     if slot:
         db.delete(slot)
         db.commit()

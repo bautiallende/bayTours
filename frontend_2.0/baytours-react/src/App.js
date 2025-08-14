@@ -9,7 +9,7 @@ import GroupDetail from "./pages/GroupDetail";
 import Layout from "./components/Layout";   // <-- Asegúrate que Layout.js tenga export default Layout;
 import LocalGuidesList from "./pages/LocalGuidesList"; 
 import TourLeadersList from "./pages/TourLeadersList"; 
-import TourLeaderProfile from "./components/TourLeaders/TourLeaderProfile"; 
+import TourLeaderProfile from './components/TourLeaders/profile'; 
 
       
 

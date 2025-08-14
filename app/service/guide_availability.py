@@ -18,7 +18,7 @@ async def get_guides_dispo(starting_date:date, ending_date:date, db:AsyncSession
 
 
 async def update_slot(db: AsyncSession, id_availability: int, payload: GuideAvailabilityUpdate):
-    handler = availability_handler.get('create_slot')
+    handler = availability_handler.get('update_slot')
 
     return await handler(db=db, id_availability=id_availability, slot=payload)
 
@@ -27,7 +27,7 @@ async def get_available_guides(db: AsyncSession, start_date: date, end_date: dat
     return await guide_availability_functions.get_available_guides(db=db, starting_date=start_date, ending_date=end_date)
 
 
-async def delete_slot(db:AsyncSession, id_guide:int, id_group:str):
+async def delete_slot(db:AsyncSession, id_availability:int):
     handler = availability_handler.get('delete_slot')
-    result = await handler(db=db, id_guide=id_guide, id_group=id_group)
+    result = await handler(db=db, id_availability=id_availability)
     return result

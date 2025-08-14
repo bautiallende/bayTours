@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from sqlalchemy import (
     Column, Integer, Date, Enum, String,
-    ForeignKey, DateTime
+    ForeignKey, DateTime, Text
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -23,7 +23,7 @@ class GuideAvailability(Base):
         nullable=False,
     )
     id_group        = Column(String(255), ForeignKey("group.id_group"), nullable=True)
-    notes           = Column(String(255))
+    notes           = Column(Text)
 
     modified_at     = Column(DateTime, server_default=func.now(), onupdate=func.now())
     modified_by     = Column(String(255))
